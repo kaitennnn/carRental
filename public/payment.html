@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - CarRental</title>
+    <link rel="stylesheet" href="./stylesheets/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">CarRental</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="cars.html">Car</a></li>
+            <li><a href="booking.html">Booking</a></li>
+            <li class="user-menu">
+                <a href="#" class="user-icon">
+                    <i class="fas fa-user"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="login.html">Login</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="payment-container">
+        <div class="payment-summary">
+            <h2>
+                <Summary></Summary>
+            </h2>
+            <div class="summary-details" id="bookingSummary">
+                <!-- 將由 JavaScript 填充 -->
+            </div>
+        </div>
+
+        <!--        <form class="payment-form" id="paymentForm"> -->
+        <form method="post" action="/payment/add">
+            <h2>Payment Information</h2>
+            <div class="form-group">
+                <label for="card-name">Card Holder</label>
+                <input type="text" name="cardHolder" id="card-name" required>
+                 
+            </div>
+            <div class="form-group">
+                <label for="card-number">Card No.</label>
+                <input type="text" name="cardNum" id="card-number" maxlength="16" required>
+            </div>
+            <div class="card-details">
+                <div class="form-group">
+                    <label for="expiry">Expiry Date</label>
+                    <input type="text" name="cardExpiry" id="expiry" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group">
+                    <label for="cvv">CVV</label>
+                    <input type="text" name="cardCVV" id="cvv" maxlength="3" pattern="[0-9]*" inputmode="numeric"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                </div>
+            </div>
+            <button type="submit" class="payment-button">Confirm</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 CarRental. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // 從 URL 參數獲取預約信息
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const summary = document.getElementById('bookingSummary');
+
+            summary.innerHTML = `
+                <p><strong>Name：</strong>${urlParams.get('name')}</p>
+                <p><strong>Type of Car：</strong>${urlParams.get('car-type')}</p>
+                <p><strong>Start Date：</strong>${urlParams.get('start-date')}</p>
+                <p><strong>End Date：</strong>${urlParams.get('end-date')}</p>
+                <p class="total-amount"><strong>Total：</strong>$${calculateTotal()}</p>
+            `;
+        }
+
+        function calculateTotal() {
+            // 簡單的金額計算示例
+            return '2000';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Information</title>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/stylesheets/payment.css">
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="payment-card">
+            <!-- 标题区域 -->
+            <div class="card-header">
+                <h2 class="card-title">Completion of Payment</h2>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="card-body">
+                <!-- 支付方式选择 -->
+                <div class="payment-options">
+                    <label class="payment-label">Type of Payment</label>
+
+                    <!-- 信用卡选项 -->
+                    <div id="credit-option" class="method-option">
+                        <div class="method-inner">
+                            <div class="method-info">
+                                <i class="fa fa-credit-card method-icon icon-credit"></i>
+                                <span class="method-text">Credit Card : Visa/Master/AE</span>
+                            </div>
+                            <i class="fa fa-chevron-down method-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- 信用卡表单 -->
+                    <div id="credit-form" class="payment-form">
+                        <div class="form-group">
+                            <label class="form-label" for="cardholder">Card Holder</label>
+                            <input type="text" name="cardHolder" id="card-name" class="form-input"
+                                placeholder="Name of Card Holder" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="cardnumber">Card No.</label>
+                            <input type="text" name="cardNum" id="card-number" maxlength="16" class="form-input"
+                                placeholder="1234 5678 9012 3456" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="expiry">Expiry Date</label>
+                                <input type="text" name="cardExpiry" id="expiry" maxlength="5" class="form-input"
+                                    placeholder="MM/YY" required>
+                            </div>
+
+                            <script>
+                                const input = document.getElementById('expiry');
+                                input.addEventListener('input', () => {
+                                    let val = input.value;
+                                    val = val.replace(/[^0-9]/g, '');           // 只留數字
+                                    if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2, 4); // 自動加斜線
+                                    else if (val.length > 0 && val.length <= 2) val = val;
+                                    // 檢查月份範圍
+                                    if (val.length >= 2) {
+                                        let month = val.slice(0, 2);
+                                        if (parseInt(month) < 1 || parseInt(month) > 12) {
+                                            val = '';
+                                        }
+                                    }
+                                    if (val.length > 5) val = val.slice(0, 5);
+                                    input.value = val;
+                                });
+                            </script>
+
+                            <div class="form-group">
+                                <label class="form-label" for="cvv">(CVV)</label>
+                                <input type="text" name="cardCVV" id="cvv" class="form-input" placeholder="123"
+                                    maxlength="3" pattern="[0-9]*" inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="tranDateTime" value=new Date()>
+                    <input type="hidden" name="bookNum" value="Not define">
+                    <input type="hidden" name="invNum" value="Not define">
+                    <input type="hidden" name="userName" value="Not define">
+                    <!-- 支付宝选项 -->
+                    <div id="alipay-option" class="method-option">
+                        <div class="method-inner">
+                            <div class="method-info">
+                                <i class="fa fa-qrcode method-icon icon-alipay"></i>
+                                <span class="method-text">AlipayHK</span>
+                            </div>
+                            <i class="fa fa-chevron-down method-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- 支付宝表单 -->
+                    <div id="alipay-form" class="payment-form">
+                        <div class="alipay-content">
+                            <div class="qrcode-container">
+                                <img src="https://picsum.photos/300/300?random=1" alt="AliayHK" class="qrcode-image">
+                            </div>
+                            <p class="qrcode-text">Please scan QR Code for payment</p>
+                            <a href="#" class="alipay-link">
+                                <i class="fa fa-external-link"></i> Refresh QR Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 订单摘要 -->
+                <div class="order-summary">
+                    <div class="order-item">
+                        <span class="order-label">Rental Charge: </span>
+                        <span>¥260.00</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Insurance: </span>
+                        <span>¥38.00</span>
+                    </div>
+                    <div class="order-total">
+                        <span>Total: </span>
+                        <span class="total-amount">¥298.00</span>
+                    </div>
+                </div>
+
+                <!-- 支付按钮 -->
+                <button id="pay-button" class="pay-button" disabled>
+                    Confirmed: ¥298.00
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const creditOption = document.getElementById('credit-option');
+        const alipayOption = document.getElementById('alipay-option');
+        const creditForm = document.getElementById('credit-form');
+        const alipayForm = document.getElementById('alipay-form');
+        const payButton = document.getElementById('pay-button');
+        const creditInputs = creditForm.querySelectorAll('input');
+
+        // 存储当前选中的支付方式
+        let selectedMethod = null;
+
+        // 信用卡选项点击事件
+        creditOption.addEventListener('click', () => {
+            // 重置所有选项状态
+            resetAllOptions();
+
+            // 设置信用卡选项为选中状态
+            creditOption.classList.add('credit-selected');
+
+            // 展开信用卡表单
+            creditForm.classList.add('credit-expanded');
+
+            // 更新选中的支付方式
+            selectedMethod = 'credit';
+            checkFormCompletion();
+        });
+
+        // 支付宝选项点击事件
+        alipayOption.addEventListener('click', () => {
+            // 重置所有选项状态
+            resetAllOptions();
+
+            // 设置支付宝选项为选中状态
+            alipayOption.classList.add('alipay-selected');
+
+            // 展开支付宝表单
+            alipayForm.classList.add('alipay-expanded');
+
+            // 更新选中的支付方式
+            selectedMethod = 'alipay';
+            checkFormCompletion();
+        });
+
+        // 输入框变化时检查表单完整性
+        creditInputs.forEach(input => {
+            input.addEventListener('input', checkFormCompletion);
+        });
+
+        // 支付按钮点击事件
+        payButton.addEventListener('click', () => {
+            if (selectedMethod === 'credit') {
+                alert('信用卡支付已提交，请等待验证...');
+            } else if (selectedMethod === 'alipay') {
+                alert('已跳转到支付宝支付页面');
+            }
+        });
+
+        // 信用卡号格式化
+        const cardNumberInput = document.getElementById('cardnumber');
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                value = value.match(/.{1,4}/g).join(' ');
+            }
+            e.target.value = value;
+        });
+
+        // 有效期格式化
+        const expiryInput = document.getElementById('expiry');
+        expiryInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            e.target.value = value;
+        });
+
+        // 重置所有选项状态
+        function resetAllOptions() {
+            // 重置信用卡选项
+            creditOption.classList.remove('credit-selected');
+            creditForm.classList.remove('credit-expanded');
+
+            // 重置支付宝选项
+            alipayOption.classList.remove('alipay-selected');
+            alipayForm.classList.remove('alipay-expanded');
+        }
+
+        // 检查表单是否填写完整
+        function checkFormCompletion() {
+            if (selectedMethod === 'alipay') {
+                // 支付宝不需要填写表单，直接启用按钮
+                payButton.disabled = false;
+                return;
+            }
+
+            if (selectedMethod === 'credit') {
+                // 检查信用卡表单是否所有字段都已填写
+                let isComplete = true;
+                creditInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        isComplete = false;
+                    }
+                });
+                payButton.disabled = !isComplete;
+            }
+        }
+    </script>
+</body>
+
+</html>

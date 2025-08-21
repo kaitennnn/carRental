@@ -1,0 +1,1 @@
+database schema:https://docs.google.com/spreadsheets/d/1kLF03NCLjmLqcqNGqp6JW4N7at8mopvsVUuPj0zMrPM/edit?gid=0#gid=0

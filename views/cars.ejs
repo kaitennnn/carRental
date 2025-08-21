@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./stylesheets/style.css">
+    <style>
+        /* 搜索框樣式 - 扁平長方形 */
+        .search-box {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">CarRental</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/cars">CarList</a></li>
+            <li class="user-menu">
+                <a href="#" class="user-icon">
+                    <i class="fas fa-user"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="login.html">Login</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="cars-container">
+        <div class="search-box">
+            <form id="search" class="search-form">
+                <div class="form-group">
+                    <label for="brand">品牌:</label>
+                    <select id="brand" name="brand">
+                        <option value="">請選擇品牌</option>
+                        <option value="Toyota" <%=locals.brand=='Toyota' ?'selected':''%>>Toyota</option>
+                        <option value="Honda" <%=locals.brand=='Honda' ?'selected':''%>>Honda</option>
+                        <option value="BMW" <%=locals.brand=='BMW' ?'selected':''%>>BMW</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">型號:</label>
+                    <select id="model" name="model">
+                        <option value="" <%=locals.model=='' ?'selected':''%>>請先選擇品牌</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dailyRate">日租金上限:</label>
+                    <input type="number" id="dailyRate" name="dailyRate" placeholder="例如 3000" value="<%=locals.dailyRate?dailyRate:''%>">
+                </div>
+
+                <div class="form-group">
+                    <label for="seats">座位數:</label>
+                    <input type="number" id="seats" name="seats" placeholder="例如 5" value="<%=locals.seats?seats:''%>">
+                </div>
+
+                <div class="form-group">
+                    <label for="dateRange">租車日期:</label>
+                    <input type="text" id="dateRange" placeholder="選擇日期區間">
+                </div>
+
+                <!-- 隱藏欄位，用來存 startDate 和 endDate -->
+                <input type="hidden" id="startDate" name="startDate" value="<%=locals.seats?seats:''%>">
+                <input type="hidden" id="endDate" name="endDate" value="<%=locals.seats?seats:''%>">
+
+                <button type="button" class="search-button" onclick="search()">搜尋車輛</button>
+            </form>
+        </div>
+    </main>
+
+    <section>
+        <div id="searchResult" class="cars-grid"></div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 CarRental. All rights reserved.</p>
+    </footer>
+
+</body>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    const search = async () => {
+        const form = document.getElementById("search");
+        const formData = new URLSearchParams();
+
+        Array.from(form.elements).filter(input => input.type != 'button').forEach(input => {
+            if (input.value != "") formData.append(input.name, input.value);
+        });
+
+        try {
+            const response = await fetch("/cars/search", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(`Response status: ${response.status}`);
+
+            const json = await response.json();
+            console.log(json);
+            displayCarCards(json);
+
+        } catch (error) {
+            console.log(error.message);
+            document.getElementById("searchResult").innerHTML =
+                '<div class="no-results">搜索時發生錯誤，請稍後再試</div>';
+        }
+    }
+
+    const autoSearch = async () => {
+        try {
+            // 發送空的搜索請求，獲取所有車輛
+            const response = await fetch("/cars/search", {
+                method: "POST",
+                body: new URLSearchParams() // 空的搜索條件
+            });
+
+            if (!response.ok) throw new Error(`Response status: ${response.status}`);
+
+            const json = await response.json();
+            console.log('Auto search results:', json);
+            displayCarCards(json);
+
+        } catch (error) {
+            console.log('Auto search error:', error.message);
+            document.getElementById("searchResult").innerHTML =
+                '<div class="no-results">載入車輛資料時發生錯誤</div>';
+        }
+    }
+
+    const displayCarCards = (cars) => {
+        const container = document.getElementById("searchResult");
+
+        if (!cars || cars.length === 0) {
+            container.innerHTML = '<div class="no-results">沒有找到符合條件的車輛</div>';
+            return;
+        }
+
+        let cardsHtml = '';
+
+        cars.forEach(car => {
+            cardsHtml += `
+                    <div class="car-card" onclick="selectCar('${car.id || ''}')">
+                        <img src="${car.imageURL || '/images/default-car.jpg'}" 
+                             alt="${car.brand} ${car.model}" 
+                             class="car-image"
+                             onerror="this.src='/images/default-car.jpg'">
+                        <div class="car-info">
+                            <div class="car-title">${car.brand} ${car.model}</div>
+                            <div class="car-year">${car.year}年</div>
+                            <div class="car-description">${car.description || ''}</div>
+                            <div class="car-details">
+                                <div class="car-detail">
+                                    <strong>車型:</strong> ${car.type || ''}
+                                </div>
+                                <div class="car-detail">
+                                    <strong>座位:</strong> ${car.seats || ''}人
+                                </div>
+                                <div class="car-detail">
+                                    <strong>傳動:</strong> ${car.transmission || ''}
+                                </div>
+                                <div class="car-detail">
+                                    <strong>動力:</strong> ${car.powerSource || ''}
+                                </div>
+                            </div>
+                            <div class="car-price">$${car.dailyRate || 0}/日</div>
+                        </div>
+                    </div>
+                `;
+        });
+
+        container.innerHTML = cardsHtml;
+    }
+
+    const brandModels = {
+        Toyota: ['Camry', 'Corolla', 'RAV4'],
+        Honda: ['Civic', 'CR-V', 'Accord'],
+        BMW: ['320i', 'X3', 'X5']
+    };
+
+    // 當品牌變更時，動態更新型號下拉
+    document.getElementById('brand').addEventListener('change', function () {
+        const models = brandModels[this.value] || [];
+        const modelSelect = document.getElementById('model');
+        modelSelect.innerHTML = '<option value="">請選擇型號</option>';
+
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            modelSelect.appendChild(opt);
+        });
+    });
+
+    // 初始化日期區間選擇
+    flatpickr("#dateRange", {
+        mode: "range",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disableMobile: true,
+        locale: {
+            rangeSeparator: " 至 ",
+            firstDayOfWeek: 1,
+            weekdays: {
+                shorthand: ["日", "一", "二", "三", "四", "五", "六"],
+                longhand: ["星期日", "星期一", "星期二", "星期三", "星期四", "五", "星期六"]
+            }
+        },
+        onChange: function (selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+                document.getElementById("startDate").value = selectedDates[0].toISOString().split('T')[0];
+                document.getElementById("endDate").value = selectedDates[1].toISOString().split('T')[0];
+            }
+        }
+
+    });
+
+    const BATCH_SIZE = 9;       // 每次載入 9 輛
+    let skip = 0;               // 已跳過的筆數
+    let loading = false;        // 請求鎖
+    let finished = false;       // 是否已無更多資料
+
+    // 根據 car 物件構造一張卡片元素
+    function createCarCard(car) {
+        const div = document.createElement('div');
+        div.className = 'car-card';
+        div.onclick = () => selectCar(car.carID|| '');
+        div.innerHTML = `
+      <img src="${car.imageURL || '/images/default-car.jpg'}" class="car-image" onerror="this.src='/images/default-car.jpg'">
+      <div class="car-info">
+        <div class="car-title">${car.brand} ${car.model}</div>
+        <div class="car-year">${car.year}年</div>
+        <div class="car-description">${car.description || ''}</div>
+        <div class="car-details">
+          <div class="car-detail"><strong>車型:</strong> ${car.type || ''}</div>
+          <div class="car-detail"><strong>座位:</strong> ${car.seats || ''}人</div>
+          <div class="car-detail"><strong>傳動:</strong> ${car.transmission || ''}</div>
+          <div class="car-detail"><strong>動力:</strong> ${car.powerSource || ''}</div>
+        </div>
+        <div class="car-price">$${car.dailyRate || 0}/日</div>
+      </div>`;
+        return div;
+    }
+
+    // 請求並渲染下一批車輛
+    async function loadNextBatch() {
+        if (loading || finished) return;
+        loading = true;
+
+        // 組裝分頁參數
+        const params = new URLSearchParams();
+        params.append('skip', skip);
+        params.append('limit', BATCH_SIZE);
+
+        try {
+            const res = await fetch('/cars/search', {
+                method: 'POST',
+                body: params
+            });
+            if (!res.ok) throw new Error(res.status);
+            const cars = await res.json();
+
+            // 如果返回數量小於 batch，代表已無更多
+            if (cars.length < BATCH_SIZE) finished = true;
+
+            const container = document.getElementById('searchResult');
+            cars.forEach(car => container.appendChild(createCarCard(car)));
+
+            skip += cars.length;
+        } catch (err) {
+            console.error('載入錯誤', err);
+        } finally {
+            loading = false;
+        }
+    }
+
+    // 監聽滾動事件：接近底部即加載
+    window.addEventListener('scroll', () => {
+        const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+            loadNextBatch();
+        }
+    });
+
+    // 首次載入
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNextBatch();
+    });
+
+    const selectCar = (carId) => {
+        // 處理車輛選擇邏輯
+        console.log('Selected car:', carId);
+        // 可以跳轉到車輛詳情頁面或執行其他操作
+        window.location.href = `/cars/${carId}`;
+    }
+</script>
+
+</html>

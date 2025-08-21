@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加車輛 - CarRental</title>
+    <link rel="stylesheet" href="stylesheets/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">CarRental</div>
+        <ul class="nav-links">
+            <li><a href="index.html">首頁</a></li>
+            <li><a href="cars.html">車輛列表</a></li>
+            <li><a href="add-car.html">添加車輛</a></li>
+            <li class="user-menu">
+                <a href="#" class="user-icon">
+                    <i class="fas fa-user"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="login.html">登入</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="admin-container">
+        <h1>添加新車輛</h1>
+        <form class="admin-form" id="add-car-form" action="/cars/add" method="POST">
+            <input type="hidden" id="car-id" name="carID">
+            <div class="form-group">
+                <label for="car-brand">品牌</label>
+                <select id="car-brand" name="brand" required>
+                    <option value="">請選擇品牌</option>
+                    <option value="Toyota">Toyota</option>
+                    <option value="Honda">Honda</option>
+                    <option value="Tesla">Tesla</option>
+                    <option value="BMW">BMW</option>
+                    <option value="Mercedes-Benz">Mercedes-Benz</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="car-model">型號</label>
+                <select id="car-model" name="model" required>
+                    <option value="">請先選擇品牌</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="car-year">年份</label>
+                <input type="number" id="car-year" name="year" min="2000" max="2025" required>
+            </div>
+            <div class="form-group">
+                <label for="car-type">車型</label>
+                <select id="car-type" name="type" required>
+                    <option value="">選擇車型</option>
+                    <option value="sedan">轎車</option>
+                    <option value="luxury">豪華轎車</option>
+                    <option value="suv">運動型多用途車/SUV</option>
+                    <option value="mpv">多用途車/七人車</option>
+                    <option value="mpv">旅行車</option>
+                    <option value="coupe">跑車</option>
+                    <option value="convertible">敞篷車</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="daily-rate">日租金</label>
+                <input type="number" id="daily-rate" name="dailyRate" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="car-seats">座位數</label>
+                <input type="number" id="car-seats" name="seats" min="1" max="7" required>
+            </div>
+            <div class="form-group">
+                <label for="car-transmission">變速系統</label>
+                <select id="car-transmission" name="transmission" required>
+                    <option value="">選擇變速系統</option>
+                    <option value="automatic">自動</option>
+                    <option value="manual">手動</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="car-power">動力來源</label>
+                <select id="car-power" name="powerSource" required>
+                    <option value="">選擇動力來源</option>
+                    <option value="gasoline">汽油</option>
+                    <option value="diesel">柴油</option>
+                    <option value="electric">電動</option>
+                    <option value="hybrid">油電混合</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="car-image-url">圖片網址</label>
+                <input type="url" id="car-image-url" name="imageURL" placeholder="輸入圖片網址" required>
+            </div>
+            <div class="form-group">
+                <label for="car-description">車輛描述</label>
+                <textarea id="car-description" name="description" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="last-update">最後更新日期</label>
+                <input type="date" id="last-update" name="lastUpDate" required>
+            </div>
+            <button type="submit" class="submit-button">添加車輛</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 CarRental. All rights reserved.</p>
+    </footer>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script>
+        const modelOptions = {
+            Toyota: ["Corolla", "Camry", "RAV4"],
+            Honda: ["Civic", "Accord", "CR-V"],
+            Tesla: ["Model S", "Model 3", "Model X"],
+            BMW: ["X1", "X3", "X5", "3 Series", "5 Series"],
+            "Mercedes-Benz": ["A-Class", "C-Class", "E-Class", "GLC"]
+        };
+
+        const brandSelect = document.getElementById("car-brand");
+        const modelSelect = document.getElementById("car-model");
+
+        brandSelect.addEventListener("change", function () {
+            const selectedBrand = this.value;
+            modelSelect.innerHTML = "";
+
+            if (selectedBrand && modelOptions[selectedBrand]) {
+                const models = modelOptions[selectedBrand];
+                modelSelect.innerHTML = `<option value="">請選擇型號</option>`;
+                models.forEach(function (model) {
+                    const option = document.createElement("option");
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            } else {
+                modelSelect.innerHTML = `<option value="">請先選擇品牌</option>`;
+            }
+        });
+    </script>
+</body>
+
+</html>

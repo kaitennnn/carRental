@@ -1,0 +1,279 @@
+/* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: #f9fafb;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: #1f2937;
+        }
+
+        /* 容器样式 */
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .payment-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* 标题区域 */
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+
+        /* 内容区域 */
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* 支付方式选择 */
+        .payment-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-options {
+            margin-bottom: 1.5rem;
+        }
+
+        .method-option {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .method-option:hover {
+            border-color: #d1d5db;
+        }
+
+        .method-option.credit-selected {
+            border-color: #2563eb;
+            background-color: rgba(37, 99, 235, 0.05);
+        }
+
+        .method-option.alipay-selected {
+            border-color: #108ee9;
+            background-color: rgba(16, 142, 233, 0.05);
+        }
+
+        .method-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .method-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .method-icon {
+            font-size: 1.25rem;
+        }
+
+        .icon-credit {
+            color: #2563eb;
+        }
+
+        .icon-alipay {
+            color: #108ee9;
+        }
+
+        .method-text {
+            font-weight: 500;
+        }
+
+        .method-arrow {
+            color: #9ca3af;
+            transition: transform 0.3s ease;
+        }
+
+        .method-option.credit-selected .method-arrow,
+        .method-option.alipay-selected .method-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* 展开式表单 */
+        .payment-form {
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 1rem;
+            margin-top: -0.5rem;
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .payment-form.credit-expanded {
+            height: 300px;
+            opacity: 1;
+        }
+
+        .payment-form.alipay-expanded {
+            height: 350px;
+            opacity: 1;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* 支付宝表单样式 */
+        .alipay-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .qrcode-container {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .qrcode-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .qrcode-text {
+            font-size: 0.875rem;
+            color: #4b5563;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .alipay-link {
+            font-size: 0.875rem;
+            color: #108ee9;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .alipay-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 订单摘要 */
+        .order-summary {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-label {
+            color: #4b5563;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .total-amount {
+            font-size: 1.25rem;
+        }
+
+        /* 支付按钮 */
+        .pay-button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 1.5rem;
+        }
+
+        .pay-button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .pay-button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }

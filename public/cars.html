@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車輛列表 - CarRental</title>
+    <link rel="stylesheet" href="./stylesheets/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">CarRental</a>
+        <ul class="nav-links">
+            <li><a href="index.html">首頁</a></li>
+            <li><a href="cars.html">車輛列表</a></li>
+            <li><a href="booking.html">立即預約</a></li>
+            <li class="user-menu">
+                <a href="#" class="user-icon">
+                    <i class="fas fa-user"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="login.html">登入</a></li>
+                    <li><a href="register.html">註冊</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="cars-container">
+        <h1>可租用車輛</h1>
+        <div class="car-grid">
+            <div class="car-card">
+                <img src="https://via.placeholder.com/300x200" alt="Car 1">
+                <h3>Toyota Camry</h3>
+                <p>日租金: $2000</p>
+                <p>車型: 轎車</p>
+                <a href="booking.html?car=camry" class="book-button">立即預約</a>
+            </div>
+            <div class="car-card">
+                <img src="https://via.placeholder.com/300x200" alt="Car 2">
+                <h3>Honda CR-V</h3>
+                <p>日租金: $2500</p>
+                <p>車型: SUV</p>
+                <a href="booking.html?car=crv" class="book-button">立即預約</a>
+            </div>
+            <div class="car-card">
+                <img src="https://via.placeholder.com/300x200" alt="Car 3">
+                <h3>BMW 320i</h3>
+                <p>日租金: $3500</p>
+                <p>車型: 豪華轎車</p>
+                <a href="booking.html?car=bmw" class="book-button">立即預約</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 CarRental. All rights reserved.</p>
+    </footer>
+    <script>
+        async function loadCars() {
+            try {
+                const response = await fetch('/cars/api');
+                const cars = await response.json();
+
+                const carGrid = document.querySelector('.car-grid');
+                carGrid.innerHTML = ''; // 清空預設內容
+
+                cars.forEach(car => {
+                    carGrid.innerHTML += `
+          <div class="car-card">
+            <img src="${car.image || 'https://via.placeholder.com/300x200'}" alt="${car.brand} ${car.model}">
+            <h3>${car.brand} ${car.model}</h3>
+            <p>年份: ${car.year}</p>
+            <p>日租金: $${car.dailyRate}</p>
+            <p>車型: ${getCarTypeName(car.type)}</p>
+            <a href="booking.html?car=${car._id}" class="book-button">立即預約</a>
+          </div>
+        `;
+                });
+            } catch (err) {
+                console.error('載入車輛失敗:', err);
+            }
+        }
+
+        // 車型轉換為中文
+        function getCarTypeName(type) {
+            const types = {
+                sedan: '轎車',
+                suv: 'SUV',
+                luxury: '豪華轎車'
+            };
+            return types[type] || type;
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', loadCars);
+    </script>
+</body>
+
+</html>
