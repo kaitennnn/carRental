@@ -28,7 +28,7 @@
 
     <main class="admin-container">
         <h1>添加新車輛</h1>
-        <form class="admin-form" id="add-car-form" action="/cars/add" method="POST">
+        <form class="admin-form" id="add-car-form" enctype="multipart/form-data" action="/cars/add" method="POST">
             <input type="hidden" id="car-id" name="carID">
             <div class="form-group">
                 <label for="car-brand">品牌</label>
@@ -91,8 +91,8 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="car-image-url">圖片網址</label>
-                <input type="url" id="car-image-url" name="imageURL" placeholder="輸入圖片網址" required>
+                <label for="car-image">車輛照片</label>
+                <input type="file" id="car-image" name="vehicleImage" accept="image/*" required>
             </div>
             <div class="form-group">
                 <label for="car-description">車輛描述</label>

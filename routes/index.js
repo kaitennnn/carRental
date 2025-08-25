@@ -7,4 +7,6 @@ const uri = "mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?
 router.get('/', (req, res) => res.render('index.ejs', { title: '租車服務' }));
 
 
+
+
 export default router;

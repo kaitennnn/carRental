@@ -1,18 +1,41 @@
 import { Router } from 'express';
 import { MongoClient } from "mongodb";
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const uri = "mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?retryWrites=true&w=majority&appName=car-rental";
 const router = Router();
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'car-images',
+    allowed_formats: ['jpg', 'png'],
+    transformation: [{ width: 800, height: 600, crop: 'limit' }]
+  },
+});
+const upload = multer({ storage: storage });
+
+cloudinary.config({
+  cloud_name: 'dclbim2gs',
+  api_key: '794545249291633',
+  api_secret: 'z4yQC9BU0KRFvCj18bRZd79Sl3M'
+});
 
 router.get('/', (req, res, next) => {
   const { brand = '', model = '', dailyRate = '', seats = '', startDate = '', endDate = '' } = req.query;
   res.render('cars', { title: 'CarsList', brand, model, seats, dailyRate, startDate, endDate });
 })
 
-router.post('/add', async function (req, res, next) {
+router.post('/add', upload.single('vehicleImage'), async function (req, res, next) {
   const client = new MongoClient(uri);
   try {
-    const database = client.db("carRental");
+    await client.connect();
+    const db = client.db("carRental");
+    const carsCollection = db.collection("cars");
+    const systemNumCollection = db.collection("systemNum");
+
+    const imageUrl = req.file?.path || '';
 
     const {
       brand,
@@ -21,7 +44,6 @@ router.post('/add', async function (req, res, next) {
       type,
       dailyRate,
       description,
-      imageURL,
       seats,
       transmission,
       powerSource,
@@ -31,13 +53,22 @@ router.post('/add', async function (req, res, next) {
     const brandUpper = brand.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const modelUpper = model.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-    const count = await database.collection("cars").countDocuments({
-      brand: brandUpper,
-      model: modelUpper
-    });
+    let number = 1;
+    let carID = `${brandUpper}${modelUpper}${String(number).padStart(3, '0')}`;
 
-    const number = String(count + 1).padStart(3, '0');
-    const carID = `${brandUpper}${modelUpper}${number}`;
+    const systemDoc = await systemNumCollection.findOne({ name: "carIDList" });
+    const usedIDs = systemDoc?.carIDs || [];
+
+    while (usedIDs.includes(carID)) {
+      number++;
+      carID = `${brandUpper}${modelUpper}${String(number).padStart(3, '0')}`;
+    }
+
+    await systemNumCollection.updateOne(
+      { name: "carIDList" },
+      { $push: { carIDs: carID } },
+      { upsert: true }
+    );
 
     const newCar = {
       carID,
@@ -47,7 +78,7 @@ router.post('/add', async function (req, res, next) {
       type,
       dailyRate: Number(dailyRate),
       description,
-      imageURL,
+      imageURL: imageUrl,
       seats: Number(seats),
       transmission,
       powerSource,
@@ -56,8 +87,8 @@ router.post('/add', async function (req, res, next) {
       createdAt: new Date()
     };
 
-    await database.collection("cars").insertOne(newCar);
-    res.redirect("/cars.html");
+    await carsCollection.insertOne(newCar);
+    res.redirect("/cars");
   } catch (err) {
     console.error("新增車輛失敗：", err.message);
     res.status(500).json({ error: "伺服器錯誤，請稍後再試" });
@@ -66,14 +97,53 @@ router.post('/add', async function (req, res, next) {
   }
 });
 
+router.get('/carList', async (req, res) => {
+  const client = new MongoClient(uri);
+  try {
+    const cars = await client.db("carRental").collection("cars")
+      .find({})
+      .sort({ createdAt: -1 }) // 最新的車排最前面
+      .project({
+        _id: 0,
+        carID: 1,
+        brand: 1,
+        model: 1,
+        year: 1,
+        type: 1,
+        dailyRate: 1,
+        imageURL: 1
+      })
+      .toArray();
+
+    res.json(cars);
+  } catch (err) {
+    console.error("取得車輛清單失敗：", err);
+    res.status(500).json({ error: "伺服器錯誤" });
+  } finally {
+    await client.close();
+  }
+});
+
 router.post('/search', async function (req, res, next) {
   const client = new MongoClient(uri);
-
   try {
+
     // 構建查詢條件對象
     const query = {};
     const skip = Number(req.body.skip) || 0;
     const limit = Number(req.body.limit) || 9;
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const booked = await client.db("carRental").collection('booking').distinct(
+      'carID',
+      {
+        $nor: [
+          { endDate: { $lt: start } },  // 訂單結束早於請求開始
+          { startDate: { $gt: end } }   // 訂單開始晚於請求結束
+        ]
+      }
+    );
 
     // 品牌篩選 - 如果有提供品牌，使用正則匹配
     if (req.body.brand && req.body.brand.trim() !== '') {
@@ -116,9 +186,10 @@ router.post('/search', async function (req, res, next) {
     if (req.body.transmission && req.body.transmission.trim() !== '') {
       query.transmission = req.body.transmission;
     }
-
+    if (booked.length > 0) {
+      query.carID = { $nin: booked };
+    }
     console.log('Search query:', query); // 用於調試
-
     // 執行查詢
     const data = await client.db("carRental").collection("cars")
       .find(query) // 使用動態構建的查詢條件
@@ -140,9 +211,7 @@ router.post('/search', async function (req, res, next) {
       })
       .sort({ dailyRate: 1 }) // 按價格升序排列
       .toArray();
-
     res.json(data);
-
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ error: '搜索時發生錯誤' });

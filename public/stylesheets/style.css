@@ -1035,6 +1035,7 @@ body {
 }
 
 .car-card {
+    width: 90%;
     background: white;
     border: 1px solid #e9ecef;
     border-radius: 8px;
@@ -1046,6 +1047,12 @@ body {
 .car-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.car-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .car-image {
@@ -1149,6 +1156,7 @@ body {
 
 /* 預約表單樣式 */
 .booking-container {
+    width: 100%;
     max-width: var(--container-xl);
     margin: var(--space-32) auto;
     padding: var(--space-32);
@@ -1180,7 +1188,7 @@ body {
 }
 
 .selected-car {
-    margin: var(--space-24) 0;
+    margin: var(--space-22) 0;
     text-align: center;
 }
 

@@ -42,7 +42,7 @@ document.body.innerHTML = `
           <label for="confirm-password">Confirm Password</label>
           <input type="password" id="confirm-password" required>
         </div>
-        <button type="submit" class="auth-button">Submit</button>
+        <button type="Submit" class="auth-button">Submit</button>
         <p class="auth-link">Already a Member？ <a href="login.html">Login Here</a></p>
       </form>
     </div>
@@ -54,7 +54,7 @@ document.body.innerHTML = `
 `;
 
 // Optional: Add form submission logic
-document.getElementById('registration-form').addEventListener('submit', function (e) {
+document.getElementById('registration-form').addEventListener('Submit', function (e) {
   e.preventDefault();
   const username = document.getElementById('username').value;
   const contact = document.getElementById('contact').value;

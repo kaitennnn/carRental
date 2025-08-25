@@ -85,7 +85,8 @@
 
                 <div class="form-group">
                     <label for="dailyRate">日租金上限:</label>
-                    <input type="number" id="dailyRate" name="dailyRate" placeholder="例如 3000" value="<%=locals.dailyRate?dailyRate:''%>">
+                    <input type="number" id="dailyRate" name="dailyRate" placeholder="例如 3000"
+                        value="<%=locals.dailyRate?dailyRate:''%>">
                 </div>
 
                 <div class="form-group">
@@ -263,8 +264,9 @@
     function createCarCard(car) {
         const div = document.createElement('div');
         div.className = 'car-card';
-        div.onclick = () => selectCar(car.carID|| '');
-        div.innerHTML = `
+        //div.onclick = () => selectCar(car.carID|| '');
+        div.innerHTML =
+            `<a href="/booking?carID=${car.carID}" class="car-card-link">
       <img src="${car.imageURL || '/images/default-car.jpg'}" class="car-image" onerror="this.src='/images/default-car.jpg'">
       <div class="car-info">
         <div class="car-title">${car.brand} ${car.model}</div>
@@ -277,7 +279,8 @@
           <div class="car-detail"><strong>動力:</strong> ${car.powerSource || ''}</div>
         </div>
         <div class="car-price">$${car.dailyRate || 0}/日</div>
-      </div>`;
+      </div>
+      </a>`;
         return div;
     }
 
@@ -330,7 +333,7 @@
         // 處理車輛選擇邏輯
         console.log('Selected car:', carId);
         // 可以跳轉到車輛詳情頁面或執行其他操作
-        window.location.href = `/cars/${carId}`;
+        window.location.href = `/booking/${carId}`;
     }
 </script>
 

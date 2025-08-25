@@ -1,0 +1,46 @@
+function generateSalesConfirmationEmailHTML(customerName, orderId, orderDate, items, totalAmount) {
+  let itemsList = items.map(item => `
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">${item.name}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${item.quantity}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;">$${item.price}</td>
+    </tr>`).join('');
+
+  return `
+  <div style="font-family:Arial,sans-serif; color:#333;">
+    <h2>Hi ${customerName},</h2>
+    <p>Thank you for your order! Here is your sales confirmation:</p>
+    <p><strong>Order ID:</strong> ${orderId}<br/>
+       <strong>Order Date:</strong> ${orderDate}</p>
+    <table style="border-collapse:collapse; width:100%; max-width:600px;">
+      <thead>
+        <tr style="background-color:#f2f2f2;">
+          <th style="padding:8px; border:1px solid #ddd; text-align:left;">Item</th>
+          <th style="padding:8px; border:1px solid #ddd; text-align:center;">Quantity</th>
+          <th style="padding:8px; border:1px solid #ddd; text-align:right;">Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsList}
+      </tbody>
+    </table>
+    <p style="text-align:right; font-weight:bold; font-size:1.1em;">Total Amount: $${totalAmount}</p>
+    <p>We appreciate your business!</p>
+    <p>Best regards,<br/>Your Company</p>
+  </div>
+  `;
+}
+
+// 用法示例
+const emailHTML = generateSalesConfirmationEmailHTML(
+  "Alice",
+  "12345",
+  "2025-08-22",
+  [
+    { name: "Product A", quantity: 2, price: 50 },
+    { name: "Product B", quantity: 1, price: 30 }
+  ],
+  130
+);
+
+console.log(emailHTML);

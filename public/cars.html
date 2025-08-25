@@ -13,22 +13,22 @@
         <a href="index.html" class="logo">CarRental</a>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
-            <li><a href="cars.html">Car List</a></li>
+            <li><a href="cars.html">CarList</a></li>
             <li><a href="booking.html">Booking</a></li>
             <li class="user-menu">
                 <a href="#" class="user-icon">
                     <i class="fas fa-user"></i>
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a href="login.html">登入</a></li>
-                    <li><a href="register.html">註冊</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="register.html">Register</a></li>
                 </ul>
             </li>
         </ul>
     </nav>
 
     <main class="cars-container">
-        <h1>可租用車輛</h1>
+        <h1>可租用車輛 (Available for Rent)</h1>
         <div class="car-grid">
             <div class="car-card">
                 <img src="https://via.placeholder.com/300x200" alt="Car 1">
@@ -60,7 +60,7 @@
     <script>
         async function loadCars() {
             try {
-                const response = await fetch('/cars/api');
+                const response = await fetch('/cars/carList');
                 const cars = await response.json();
 
                 const carGrid = document.querySelector('.car-grid');
@@ -68,13 +68,25 @@
 
                 cars.forEach(car => {
                     carGrid.innerHTML += `
-          <div class="car-card">
-            <img src="${car.image || 'https://via.placeholder.com/300x200'}" alt="${car.brand} ${car.model}">
-            <h3>${car.brand} ${car.model}</h3>
+          <div class="car-card" style="text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;">
+            <img 
+            src="${car.imageURL || 'https://via.placeholder.com/700x400'}" 
+            alt="${car.brand} ${car.model}" 
+            width="700" 
+            height="400" 
+            style="display: inline-block; border-radius: 8px;"
+            >
+            <h3 style="margin-top: 15px;">${car.brand} ${car.model}</h3>
             <p>年份: ${car.year}</p>
             <p>日租金: $${car.dailyRate}</p>
             <p>車型: ${getCarTypeName(car.type)}</p>
-            <a href="booking.html?car=${car._id}" class="book-button">立即預約</a>
+            <a 
+               href="booking.html?car=${car._id}" 
+               class="book-button" 
+               style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;"
+            >
+               立即預約
+            </a>
           </div>
         `;
                 });
