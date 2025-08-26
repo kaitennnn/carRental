@@ -1610,6 +1610,34 @@ body {
     margin-left: var(--space-16);
 }
 
+.nav-links .user-menu {
+    display: flex;
+    align-items: center;
+}
+
+.user-name {
+    margin-right: 10px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.logout-form {
+    display: inline;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+}
+
+.logout-button:hover {
+    text-decoration: underline;
+}
+
 /* 頁尾樣式 */
 footer {
     background-color: var(--color-charcoal-800);
@@ -1626,7 +1654,33 @@ footer {
         font-size: var(--font-size-3xl);
     }
 
-    .nav-links {
+    .nav-links {.nav-links .user-menu {
+    display: flex;
+    align-items: center;
+}
+
+.user-name {
+    margin-right: 10px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.logout-form {
+    display: inline;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+}
+
+.logout-button:hover {
+    text-decoration: underline;
+}
         display: none;
     }
 

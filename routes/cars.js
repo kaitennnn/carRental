@@ -22,10 +22,28 @@ cloudinary.config({
   api_secret: 'z4yQC9BU0KRFvCj18bRZd79Sl3M'
 });
 
-router.get('/', (req, res, next) => {
-  const { brand = '', model = '', dailyRate = '', seats = '', startDate = '', endDate = '' } = req.query;
-  res.render('cars', { title: 'CarsList', brand, model, seats, dailyRate, startDate, endDate });
-})
+router.get('/', (req, res) => {
+  const isAdmin = req.session?.role === 'admin'; // 從 session 判斷身份
+  const {
+    brand = '',
+    model = '',
+    dailyRate = '',
+    seats = '',
+    startDate = '',
+    endDate = ''
+  } = req.query;
+
+  res.render('cars', {
+    title: 'CarsList',
+    isAdmin,
+    brand,
+    model,
+    seats,
+    dailyRate,
+    startDate,
+    endDate
+  });
+});
 
 router.post('/add', upload.single('vehicleImage'), async function (req, res, next) {
   const client = new MongoClient(uri);
@@ -97,6 +115,65 @@ router.post('/add', upload.single('vehicleImage'), async function (req, res, nex
   }
 });
 
+router.get('/edit1/:carID', async (req, res) => {
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    const car = await client.db("carRental").collection("cars").findOne({ carID: req.params.carID });
+
+    if (!car) {
+      return res.status(404).json({ error: '找不到車輛' });
+    }
+
+    res.json(car); // 回傳 JSON 給前端
+  } catch (err) {
+    console.error('取得車輛資料失敗:', err);
+    res.status(500).json({ error: '伺服器錯誤' });
+  } finally {
+    await client.close();
+  }
+});
+
+router.post('/update/:carID', async (req, res) => {
+  if (req.session?.role !== 'admin') {
+    return res.status(403).send('無權限更新車輛');
+  }
+
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+
+    const updateFields = {
+      brand: req.body.brand,
+      model: req.body.model,
+      year: Number(req.body.year),
+      type: req.body.type,
+      dailyRate: Number(req.body.dailyRate),
+      seats: Number(req.body.seats),
+      transmission: req.body.transmission,
+      powerSource: req.body.powerSource,
+      description: req.body.description,
+      lastUpDate: new Date(req.body.lastUpDate)
+    };
+
+    const result = await client.db("carRental").collection("cars").updateOne(
+      { carID: req.params.carID },
+      { $set: updateFields }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).send('更新失敗或資料未變更');
+    }
+
+    res.redirect('/cars');
+  } catch (err) {
+    console.error('更新錯誤:', err);
+    res.status(500).send('伺服器錯誤');
+  } finally {
+    await client.close();
+  }
+});
+
 router.get('/carList', async (req, res) => {
   const client = new MongoClient(uri);
   try {
@@ -127,7 +204,6 @@ router.get('/carList', async (req, res) => {
 router.post('/search', async function (req, res, next) {
   const client = new MongoClient(uri);
   try {
-
     // 構建查詢條件對象
     const query = {};
     const skip = Number(req.body.skip) || 0;
@@ -144,44 +220,36 @@ router.post('/search', async function (req, res, next) {
         ]
       }
     );
-
     // 品牌篩選 - 如果有提供品牌，使用正則匹配
     if (req.body.brand && req.body.brand.trim() !== '') {
       const reg = new RegExp(".*" + req.body.brand + ".*", "i"); // 添加 i 標誌進行大小寫不敏感匹配
       query.brand = { $regex: reg };
     }
-
     // 型號篩選
     if (req.body.model && req.body.model.trim() !== '') {
       const modelReg = new RegExp(".*" + req.body.model + ".*", "i");
       query.model = { $regex: modelReg };
     }
-
     // 日租金上限篩選
     if (req.body.dailyRate && !isNaN(req.body.dailyRate)) {
       query.dailyRate = { $lte: Number(req.body.dailyRate) };
     }
-
     // 座位數篩選
     if (req.body.seats && !isNaN(req.body.seats)) {
       query.seats = { $gte: Number(req.body.seats) }; // 大於等於指定座位數
     }
-
     // 車型篩選（如果前端有提供）
     if (req.body.type && req.body.type.trim() !== '') {
       query.type = req.body.type;
     }
-
     // 年份篩選（如果需要）
     if (req.body.year && !isNaN(req.body.year)) {
       query.year = { $gte: Number(req.body.year) }; // 大於等於指定年份
     }
-
     // 動力來源篩選（如果需要）
     if (req.body.powerSource && req.body.powerSource.trim() !== '') {
       query.powerSource = req.body.powerSource;
     }
-
     // 傳動系統篩選（如果需要）
     if (req.body.transmission && req.body.transmission.trim() !== '') {
       query.transmission = req.body.transmission;
@@ -218,6 +286,33 @@ router.post('/search', async function (req, res, next) {
   } finally {
     // Close the MongoDB client connection
     await client.close();
+  }
+});
+
+router.get('/api/models/:brand', async (req, res) => {
+  const client = new MongoClient(uri);
+  try {
+    const { brand } = req.params;
+    // 使用 MongoDB distinct 查詢該品牌下的所有型號
+    const models = await client.db("carRental").collection('cars').distinct('model', {
+      brand: brand
+    });
+    res.json(models);
+  } catch (error) {
+    console.error('查詢型號錯誤:', error);
+    res.status(500).json({ error: '查詢型號失敗' });
+  }
+});
+
+// 如果需要取得所有品牌列表
+router.get('/api/brands', async (req, res) => {
+  const client = new MongoClient(uri);
+  try {
+    const brands = await client.db("carRental").collection('cars').distinct('brand');
+    res.json(brands);
+  } catch (error) {
+    console.error('查詢品牌錯誤:', error);
+    res.status(500).json({ error: '查詢品牌失敗' });
   }
 });
 

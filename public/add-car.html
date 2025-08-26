@@ -32,24 +32,15 @@
             <input type="hidden" id="car-id" name="carID">
             <div class="form-group">
                 <label for="car-brand">品牌</label>
-                <select id="car-brand" name="brand" required>
-                    <option value="">請選擇品牌</option>
-                    <option value="Toyota">Toyota</option>
-                    <option value="Honda">Honda</option>
-                    <option value="Tesla">Tesla</option>
-                    <option value="BMW">BMW</option>
-                    <option value="Mercedes-Benz">Mercedes-Benz</option>
-                </select>
+                <input type="text" id="car-brand" name="brand" placeholder="請輸入品牌" required>
             </div>
             <div class="form-group">
                 <label for="car-model">型號</label>
-                <select id="car-model" name="model" required>
-                    <option value="">請先選擇品牌</option>
-                </select>
+                <input type="text" id="car-model" name="model" placeholder="請輸入型號" required>
             </div>
             <div class="form-group">
                 <label for="car-year">年份</label>
-                <input type="number" id="car-year" name="year" min="2000" max="2025" required>
+                <input type="number" id="car-year" name="year" min="1900" max="2025" required>
             </div>
             <div class="form-group">
                 <label for="car-type">車型</label>
@@ -111,35 +102,39 @@
     </footer>
     <script src="https://kit.fontawesome.com/a076d05399.js"></script>
     <script>
-        const modelOptions = {
-            Toyota: ["Corolla", "Camry", "RAV4"],
-            Honda: ["Civic", "Accord", "CR-V"],
-            Tesla: ["Model S", "Model 3", "Model X"],
-            BMW: ["X1", "X3", "X5", "3 Series", "5 Series"],
-            "Mercedes-Benz": ["A-Class", "C-Class", "E-Class", "GLC"]
-        };
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const carID = urlParams.get('carID');
 
-        const brandSelect = document.getElementById("car-brand");
-        const modelSelect = document.getElementById("car-model");
+            if (carID) {
+                try {
+                    const res = await fetch(`/cars/edit1/${carID}`);
+                    if (!res.ok) throw new Error('找不到車輛資料');
+                    const car = await res.json();
 
-        brandSelect.addEventListener("change", function () {
-            const selectedBrand = this.value;
-            modelSelect.innerHTML = "";
+                    document.getElementById('car-id').value = car.carID || '';
+                    document.getElementById('car-brand').value = car.brand || '';
+                    document.getElementById('car-model').value = car.model || '';
+                    document.getElementById('car-year').value = car.year || '';
+                    document.getElementById('car-type').value = car.type || '';
+                    document.getElementById('daily-rate').value = car.dailyRate || '';
+                    document.getElementById('car-seats').value = car.seats || '';
+                    document.getElementById('car-transmission').value = car.transmission || '';
+                    document.getElementById('car-power').value = car.powerSource || '';
+                    document.getElementById('car-description').value = car.description || '';
+                    document.getElementById('last-update').value = car.lastUpDate?.split('T')[0] || '';
 
-            if (selectedBrand && modelOptions[selectedBrand]) {
-                const models = modelOptions[selectedBrand];
-                modelSelect.innerHTML = `<option value="">請選擇型號</option>`;
-                models.forEach(function (model) {
-                    const option = document.createElement("option");
-                    option.value = model;
-                    option.textContent = model;
-                    modelSelect.appendChild(option);
-                });
-            } else {
-                modelSelect.innerHTML = `<option value="">請先選擇品牌</option>`;
+                    document.querySelector('h1').textContent = '編輯車輛';
+                    document.querySelector('.submit-button').textContent = '儲存修改';
+                    document.getElementById('add-car-form').action = `/cars/update/${carID}`;
+                } catch (err) {
+                    alert('載入車輛資料失敗');
+                    console.error(err);
+                }
             }
         });
     </script>
+
 </body>
 
 </html>

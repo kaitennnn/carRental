@@ -40,8 +40,7 @@
         <a href="/" class="logo">CarRental</a>
         <ul class="nav-links">
             <li><a href="/">Home</a></li>
-            <li><a href="/car">CarList</a></li>
-            <li><a href="/booking">NowBooking</a></li>
+            <li><a href="/cars">CarList</a></li>
             <li class="user-menu">
                 <a href="#" class="user-icon">
                     <i class="fas fa-user"></i>
@@ -59,7 +58,7 @@
                     <img src="<%= locals.imageURL %>" class="car-image" onerror="this.src='/images/default-car.jpg'">
                     <div class="car-info">
                         <div class="car-title">
-                            <span>
+                            <span id="carBrand">
                                 <%=locals.brand%>
                             </span>
                             <%= locals.model %>
@@ -91,29 +90,34 @@
                 <div class="booking-grid">
                     <div class="booking-form-section">
                         <h1>Booking Form</h1>
-                        <form class="booking-form" action="/payment" method="get">
-                            <input type="hidden" id="carID" name="carID" value="<%=locals.carID%>">
-                            <input type="hidden" id="amount" name="amount" value="0">
-                            <div class="form-group">
-                                <label for="name">Name</label>
-                                <input type="text" id="name" name="userName" value="<%=locals.uesrName?uesrName:''%>"
-                                    required>
-                            </div>
-                            <div class="form-group">
-                                <label for="phone">phone</label>
-                                <input type="tel" id="phone" name="phone" value="<%=locals.phone?phone:''%>" required>
-                            </div>
-                            <div class="date-range-picker">
+                        <% if(currentUserName){ %>
+                            <form class="booking-form" action="/payment" method="get">
+                                <input type="hidden" id="carID" name="carID" value="<%=locals.carID%>">
+                                <input type="hidden" id="amount" name="amount" value="0">
                                 <div class="form-group">
-                                    <label for="date-range">選擇租車日期</label>
-                                    <input type="text" id="date-range" name="date-range" placeholder="選擇起始和結束日期"
+                                    <label for="name">Name</label>
+                                    <input type="text" id="name" name="userName" value="<%= currentUserName %>"
                                         readonly>
-                                    <input type="hidden" id="startdate" name="startDate">
-                                    <input type="hidden" id="enddate" name="endDate">
                                 </div>
-                            </div>
-                            <button type="submit" class="submit-button" id="submitBtn">確認預約</button>
-                        </form>
+                                <div class="form-group">
+                                    <label for="phone">phone</label>
+                                    <input type="tel" id="phone" name="phone" value="<%=locals.phone?phone:''%>"
+                                        required>
+                                </div>
+                                <div class="date-range-picker">
+                                    <div class="form-group">
+                                        <label for="date-range">選擇租車日期</label>
+                                        <input type="text" id="date-range" name="date-range" placeholder="選擇起始和結束日期"
+                                            readonly>
+                                        <input type="hidden" id="startdate" name="startDate">
+                                        <input type="hidden" id="enddate" name="endDate">
+                                    </div>
+                                </div>
+                                <button type="submit" class="submit-button" id="submitBtn">確認預約</button>
+                            </form>
+                            <%}else{%>
+                                <p>Please <a href="/users/login">Login</a> </p>
+                                <%}%>
                     </div>
                 </div>
             </div>

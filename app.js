@@ -1,5 +1,7 @@
 import createError from 'http-errors';
 import express, { json, urlencoded } from 'express';
+import session  from 'express-session';
+import MongoStore from 'connect-mongo';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
@@ -13,6 +15,43 @@ import bookingRouter from './routes/booking.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+app.use(session({
+  secret: 'abcdefg',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: 'mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?retryWrites=true&w=majority&appName=car-rental' }),
+  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 天
+}));
+
+app.use((req, res, next) => {
+  if (!req.session) {
+    console.error('Session not initialized');
+  }
+  next();
+});
+// 中介：檢查是否登入
+function requireLogin(req, res, next) {
+  if (req.session.userId) {
+    return next();
+  }
+  res.redirect('/login');
+}
+
+// 中介：檢查是否 admin
+function requireAdmin(req, res, next) {
+  if (req.session.role === 'admin') {
+    return next();
+  }
+  res.status(403).send('需要管理員權限');
+}
+
+// 全域將登入資訊傳給模板
+app.use((req, res, next) => {
+  res.locals.currentUser   = req.session.userId || null;
+  res.locals.currentRole   = req.session.role   || null;
+  res.locals.currentUserName = req.session.userName || null;
+  next();
+});
 // view engine setup
 app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'ejs');

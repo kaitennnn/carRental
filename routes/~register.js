@@ -21,6 +21,7 @@ document.body.innerHTML = `
   <main class="auth-container">
     <div class="auth-form">
       <h2>Member Registration</h2>
+      <form method = "Post" action="register_success.html"> 
       <form id="registration-form">
         <div class="form-group">
           <label for="username">First and Last Name</label>
@@ -52,7 +53,7 @@ document.body.innerHTML = `
     <p>&copy; 2024 CarRental. All rights reserved.</p>
   </footer>
 `;
-
+//
 // Optional: Add form submission logic
 document.getElementById('registration-form').addEventListener('Submit', function (e) {
   e.preventDefault();

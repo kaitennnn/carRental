@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import { MongoClient, ObjectId } from "mongodb";
+import nodemailer from 'nodemailer';
+
 const uri = "mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?retryWrites=true&w=majority&appName=car-rental";
 var router = Router();
 
-/* GET  user listing*/
-router.get('/', function (req, res, next) {
+function requireLogin(req, res, next) {
+  if (req.session.userId) return next();
+  res.redirect('users/login');
+}
+/*GET  user listing*/
+router.get('/',requireLogin, function (req, res, next) {
   res.render('payment', {
     carID: req.query.carID,
     startDate: req.query.startDate,
@@ -14,6 +20,7 @@ router.get('/', function (req, res, next) {
     title: 'Payment Page'
   });
 });
+
 
 router.post('/add', async function (req, res, next) {
   const { cardNum, cardExpiry, cardCVV, amount, bookingTempId } = req.body;
@@ -93,7 +100,7 @@ router.post('/add', async function (req, res, next) {
     req.body.bookNum = await generateBookNo();
     req.body.invNum = await generateOrderNo();
     await database.collection("payment").insertMany([{
-      userName: req.body.userName,
+      userName: req.session.userName,
       cardHolder: req.body.cardHolder,
       cardNum: req.body.cardNum,
       cardExpiry: req.body.cardExpiry,
@@ -104,7 +111,7 @@ router.post('/add', async function (req, res, next) {
     }]);
     if (req.body.invNum) {
       await database.collection("booking").insertMany([{
-        userName: req.body.userName,
+        userName: req.session.userName,
         carID: req.body.carID,
         startDate: req.body.startDate,
         endDate: req.body.endDate,
@@ -112,6 +119,31 @@ router.post('/add', async function (req, res, next) {
         bookNum: req.body.bookNum,
       }]);
     }
+
+// Test Email Sending Procedure
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: 'mrfranco2000@gmail.com',
+      pass: 'zmttkslidjklbaxw',
+    },
+});
+
+// Wrap in an async IIFE so we can use await.
+(async () => {
+  const info = await transporter.sendMail({
+    from: '"carRental" <backendtest25@gmail.com>',
+    to: "mrfranco2000@hotmail.com",
+    subject: "Hello ✔",
+    text: "Hello world?", // plain‑text body
+    html: "<b>Hello world?</b>", // HTML body
+  });
+
+  console.log("Message sent:", info.messageId);
+})();
 
     res.send("Record Add!");
   } finally {

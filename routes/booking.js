@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { MongoClient, ObjectId } from "mongodb";
+import session from 'express-session';
 const uri = "mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?retryWrites=true&w=majority&appName=car-rental";
 const router = Router();
 
@@ -10,7 +11,7 @@ router.get('/', async function (req, res, next) {
     const query = {};
     query.carID = req.query.carID;
     const car = await client.db('carRental').collection('cars')
-      .find(query)
+      .find({ carID: req.query.carID })
       .project({
         _id: 0,
         carID: 1,
@@ -26,7 +27,8 @@ router.get('/', async function (req, res, next) {
         powerSource: 1
       })
       .toArray();
-    res.render('booking',car[0]);
+    const cars = car[0];
+    res.render('booking', cars);
   } catch (err) {
     return next(err);
   } finally {
@@ -34,7 +36,7 @@ router.get('/', async function (req, res, next) {
   }
 });
 
-router.post('add', async function (req, res, next) {
+router.post('/add', async function (req, res, next) {
   const client = new MongoClient(uri);
   try {
     const database = client.db("carRental");
