@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
+    <title>Register - CarRental</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">carRental</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/cars">Car List</a></li>
+        </ul>
+    </nav>
+
+    <main class="auth-container">
+        <div class="auth-form">
+            <h2>Member Registration</h2>
+            <form id="registration-form" data-phone-verified="false">
+                <div class="form-group">
+                    <label for="username">Name</label>
+                    <input type="text" id="username" name="userName" pattern="^[^\s]+$" minlength="3" maxlength="15"
+                        required>
+                    <small class="form-help">3–15 characters, no spaces</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <div class="phone-verify">
+                        <input type="tel" id="phone" name="phone" maxlength="11" inputmode="numeric"
+                            pattern="[0-9]{8,11}" required>
+                        <button type="button" id="sendCodeBtn" class="verify-btn">Send Code</button>
+                    </div>
+                    <small class="form-help">Enter 8–11 digits</small>
+                </div>
+
+                <div class="form-group" id="codeGroup" style="display:none;">
+                    <label for="code">Verification Code</label>
+                    <input type="text" id="code" name="code" maxlength="6">
+                    <button type="button" id="checkCodeBtn" class="verify-btn">Verify</button><br>
+                    <small id="codeHelp" class="form-help"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                    <small class="form-help">e.g. user@example.com</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="8">
+                    <small class="form-help">At least 8 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirmPassword" required minlength="8">
+                </div>
+
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="auth-button">Register</button>
+            </form>
+
+            <p class="auth-link">
+                Already a member? <a id="loginBtn" href="/users/login">Login here</a>
+            </p>
+            <p id="errorMsg" style="color:red; display:none;"></p>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 CarRental. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('registration-form');
+            const sendBtn = document.getElementById('sendCodeBtn');
+            const checkBtn = document.getElementById('checkCodeBtn');
+            const codeGroup = document.getElementById('codeGroup');
+            const codeHelp = document.getElementById('codeHelp');
+            const errorEl = document.getElementById('errorMsg');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Preserve returnUrl
+            const urlParams = new URLSearchParams(window.location.search);
+            loginBtn.href = `/users/login?returnUrl=${encodeURIComponent(urlParams.get('returnUrl') || '/')}`;
+
+            // Numeric only phone
+            document.getElementById('phone').addEventListener('input', e => {
+                e.target.value = e.target.value.replace(/[^\d]/g, '');
+            });
+
+            function showError(msg) {
+                errorEl.textContent = msg;
+                errorEl.style.display = 'block';
+            }
+
+            // 发送验证码
+            sendBtn.addEventListener('click', async () => {
+                const phone = document.getElementById('phone').value.trim();
+                if (!/^\d{8,11}$/.test(phone)) {
+                    showError('Please enter a valid phone number');
+                    return;
+                }
+                errorEl.style.display = 'none';
+                try {
+                    const res = await fetch('/users/send-verification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({ phone })
+                    });
+                    if (!res.ok) throw new Error();
+                    codeGroup.style.display = 'block';
+                    codeHelp.textContent = 'Code sent';
+                } catch {
+                    codeHelp.textContent = 'Failed to send code';
+                }
+            });
+
+            // 校验验证码
+            checkBtn.addEventListener('click', async () => {
+                const phone = document.getElementById('phone').value.trim();
+                const code = document.getElementById('code').value.trim();
+                if (!code) {
+                    codeHelp.textContent = 'Enter the code';
+                    return;
+                }
+                try {
+                    const res = await fetch('/users/check-verification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({ phone, code })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        codeHelp.textContent = 'Verified';
+                        form.dataset.phoneVerified = 'true';
+                    } else {
+                        codeHelp.textContent = result.error || 'Verification failed';
+                    }
+                } catch {
+                    codeHelp.textContent = 'Verification request failed';
+                }
+            });
+
+            // Guard form submit
+            form.addEventListener('submit', async e => {
+                errorEl.style.display = 'none';
+                if (form.dataset.phoneVerified !== 'true') {
+                    e.preventDefault();
+                    showError('Please verify your phone first');
+                    return;
+                }
+                e.preventDefault();
+                const data = {
+                    userName: form.userName.value.trim(),
+                    phone: form.phone.value.trim(),
+                    email: form.email.value.trim(),
+                    password: form.password.value
+                };
+                try {
+                    const res = await fetch('/users/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (res.ok && result.success) {
+                        window.location.href = `/register_success.html?returnUrl=${encodeURIComponent(urlParams.get('returnUrl') || '/')}`;
+                    } else {
+                        showError(result.message || 'Registration failed');
+                    }
+                } catch {
+                    showError('Network or server error, please try again later');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

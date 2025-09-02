@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment Successful</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body>
+  <main class="auth-container">
+    <div class="card auth-form" style="max-width: 500px; margin: auto; text-align: center;">
+      <h1 class="status--success" style="margin-bottom: var(--space-16);">
+        Payment Successful
+      </h1>
+      <p style="margin-bottom: var(--space-16);">
+        Thank you! Your payment has been processed successfully.
+      </p>
+      <p style="margin-bottom: var(--space-24);">
+        A receipt has been sent to your email.<br>
+        You will be redirected to your bookings shortly.
+      </p>
+      <a href="/users/profile/<%=currentUserName%>" id="bookingsBtn" class="btn btn--primary auth-button" style="width: auto;">
+        View My Bookings
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <p>Copyright &copy; 2025 carRental. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // 获取 returnUrl 参数或默认到 /bookings
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('returnUrl') || '/users/profile/<%=currentUserName%>';
+
+    // 设置按钮链接
+    const btn = document.getElementById('bookingsBtn');
+    btn.href = `${returnUrl}`;
+
+    // 5秒后自动跳转
+    setTimeout(() => {
+      window.location.href = "/users/profile/<%=currentUserName%>";
+    }, 5000);
+  </script>
+</body>
+</html>

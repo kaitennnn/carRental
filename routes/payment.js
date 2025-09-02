@@ -7,11 +7,17 @@ var router = Router();
 
 function requireLogin(req, res, next) {
   if (req.session.userId) return next();
-  res.redirect('users/login');
+  // 帶上 returnUrl 跳轉到登入頁（包含 GET 和 POST）
+  const returnUrl = encodeURIComponent(req.originalUrl);
+  res.redirect(`/users/login?returnUrl=${returnUrl}`);
 }
 /*GET  user listing*/
-router.get('/',requireLogin, function (req, res, next) {
+router.get('/', requireLogin, function (req, res, next) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.render('payment', {
+    csrfToken: req.csrfToken(),
     carID: req.query.carID,
     startDate: req.query.startDate,
     endDate: req.query.endDate,
@@ -23,7 +29,6 @@ router.get('/',requireLogin, function (req, res, next) {
 
 
 router.post('/add', async function (req, res, next) {
-  const { cardNum, cardExpiry, cardCVV, amount, bookingTempId } = req.body;
   const client = new MongoClient(uri);
   try {
     const database = client.db('carRental');
@@ -120,35 +125,58 @@ router.post('/add', async function (req, res, next) {
       }]);
     }
 
-// Test Email Sending Procedure
+    // Test Email Sending Procedure
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: 'mrfranco2000@gmail.com',
-      pass: 'zmttkslidjklbaxw',
-    },
-});
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: 'mrfranco2000@gmail.com',
+        pass: 'zmttkslidjklbaxw',
+      },
+    });
 
-// Wrap in an async IIFE so we can use await.
-(async () => {
-  const info = await transporter.sendMail({
-    from: '"carRental" <backendtest25@gmail.com>',
-    to: "mrfranco2000@hotmail.com",
-    subject: "Hello ✔",
-    text: "Hello world?", // plain‑text body
-    html: "<b>Hello world?</b>", // HTML body
-  });
+    // Wrap in an async IIFE so we can use await.
+    (async () => {
+      const info = await transporter.sendMail({
+        from: '"carRental" <backendtest25@gmail.com>',
+        to: req.session.userEmail,
+        subject: "Order Confirmation",
+        text: `Dear ${req.body.cardHolder},`, // plain‑text body
+        html: `Dear ${req.body.cardHolder},<br><br>
+        Thank you for choosing carRental! We're happy to confirm your booking for <b>${req.body.carID}.</b><br><br>
+          <b>Your order information is as below:</b><br>
+          <b>Your Order No.:</b>  ${req.body.bookNum} <br>
+          <b>Your Name:</b> ${req.session.userName} <br>
+          <b>Car No:</b> ${req.body.carID} <br> 
+          <b>From : </b>  ${req.body.startDate} <b>to</b> ${req.body.endDate} <br> 
+          <b>Total Amount: </b> ${Number(req.body.amount).toLocaleString()}<br><br><br>
+          
+            <b>For changes or cancellations: </b> Please reply to this email or call us at 3442-6359 at least 24 hours in advance. <br><br>
+            <b>On the day: </b> Please have this email available for verification. <br><br> <b>Important Information:</b><br>
+            <b>Cancellation Policy:</b> Briefly state your cancellation or no-show policy <br><br>
+            <b>Additional Information:</b> e.g., Parking details, directions, what to bring. We look forward to seeing you!<br><br><br><br> 
+            Sincerely,<br><br>
+            <a href="https://www.hongkongdisneyland.com/zh-hk/">carRental</a>` , // HTML body
+      });
 
-  console.log("Message sent:", info.messageId);
-})();
+      console.log("Message sent:", info.messageId);
+    })();
 
-    res.send("Record Add!");
+    //res.send("Record Add!");
+    //res.redirect("localhost:3000");
+    res.redirect("payment_success"); // Back to home page
   } finally {
     await client.close();
   }
+});
+
+router.get('/payment_success', requireLogin, function (req, res, next) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.render('payment_success', { title: 'Payment Success' });
 });
 
 router.get('/edit/:id', async function (req, res, next) {

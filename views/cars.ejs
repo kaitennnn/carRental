@@ -1,19 +1,28 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en-HK">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <link rel="stylesheet" href="./stylesheets/style.css">
     <style>
         /* 搜索框樣式 - 扁平長方形 */
         .search-box {
+            display: block;
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             background: #f8f9fa;
             border: 1px solid #e9ecef;
-            border-radius: 8px;
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .search-box form {
+            display: grid;
+            flex-direction: column;
+            gap: var(--space-16);
         }
 
         .search-form {
@@ -48,25 +57,26 @@
 
 <body>
     <nav class="navbar">
-        <a href="/" class="logo">CarRental</a>
+        <a href="/" class="logo">carRental</a>
         <ul class="nav-links">
             <li><a href="/">Home</a></li>
-            <li><a href="/cars">CarList</a></li>
-            <li class="user-menu">
-                <a href="#" class="user-icon">
-                    <i class="fas fa-user"></i>
-                </a>
-                <ul class="dropdown-menu">
-                    <% if (currentUser) { %>
-                        <li>您好，<%= currentUserName %>！</li>
-                        <li>
-                            <form action="users/logout" method="post"><button>登出</button></form>
-                        </li>
-                        <% } else { %>
-                            <li><a href="users/login">登入</a></li>
-                            <% } %>
-                </ul>
-            </li>
+            <li><a href="/cars">Car List</a></li>
+            <% if (currentUser) { %>
+                <li><a href="/users/profile/<%= currentUserName %>">Profile</a></li>
+                <li class="user-menu">
+                    <!-- 登录后直接显示用户名 -->
+                    <span class="user-name">Hello, <%= currentUserName %>!</span>
+                    <form action="/users/logout" method="post" class="logout-form">
+                        <button type="submit" class="logout-button">Logout</button>
+                    </form>
+                </li>
+                <% } else { %>
+                    <li class="user-menu">
+                        <a href="/users/login?returnUrl=/cars">
+                            <i class="fas fa-user">Login</i>
+                        </a>
+                    </li>
+                    <% } %>
         </ul>
     </nav>
 
@@ -74,44 +84,46 @@
         <div class="search-box">
             <form id="search" class="search-form">
                 <div class="form-group">
-                    <label for="brand">品牌:</label>
+                    <label for="brand">Brand:</label>
                     <select id="brand" name="brand">
-                        <option value="">載入中...</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="model">型號:</label>
+                    <label for="model">Model:</label>
                     <select id="model" name="model">
-                        <option value="" <%=locals.model=='' ?'selected':''%>>請先選擇品牌</option>
+                        <option value="" <%=locals.model=='' ?'selected':''%>>Please select a brand first</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="dailyRate">日租金上限:</label>
-                    <input type="number" id="dailyRate" name="dailyRate" placeholder="例如 3000"
+                    <label for="dailyRate">Daily Rate:</label>
+                    <input type="number" id="dailyRate" name="dailyRate" placeholder="Minimum $600" min="600"
                         value="<%=locals.dailyRate?dailyRate:''%>">
                 </div>
 
                 <div class="form-group">
-                    <label for="seats">座位數:</label>
-                    <input type="number" id="seats" name="seats" placeholder="例如 5" value="<%=locals.seats?seats:''%>">
+                    <label for="seats">Number of Seats:</label>
+                    <input type="number" id="seats" name="seats" placeholder="e.g. 5" min="2"
+                        value="<%=locals.seats?seats:''%>">
                 </div>
 
                 <div class="form-group">
-                    <label for="dateRange">租車日期:</label>
-                    <input type="text" id="dateRange" placeholder="選擇日期區間">
+                    <label for="dateRange">Rental Date:</label>
+                    <input type="text" id="dateRange" placeholder="Select date range">
                 </div>
 
                 <!-- 隱藏欄位，用來存 startDate 和 endDate -->
                 <input type="hidden" id="startDate" name="startDate" value="<%=locals.seats?seats:''%>">
                 <input type="hidden" id="endDate" name="endDate" value="<%=locals.seats?seats:''%>">
-
-                <button type="button" class="search-button" onclick="search()">搜尋車輛</button>
-                <% if (currentRole==='admin' ) { %>
-                    <button type="button" class="search-button" onclick="window.location.href='/add-car.html'">➕
-                        新增車輛</button>
-                    <% } %>
+                <div class="form-group">
+                    <button type="submit" class="search-button">Search Cars</button>
+                    <% if (currentRole =='admin' ) { %>
+                        <button type="button" class="search-button" onclick="window.location.href = '/cars/edit/0';">➕
+                            Add Car</button>
+                        <% } %>
+                </div>
             </form>
         </div>
 
@@ -122,7 +134,7 @@
     </section>
 
     <footer>
-        <p>&copy; 2024 CarRental. All rights reserved.</p>
+        <p>&copy; 2025 CarRental. All rights reserved.</p>
     </footer>
 
 </body>
@@ -138,12 +150,31 @@
     const BATCH_SIZE = 9;
     const modelCache = new Map(); // 快取型號資料
 
+    document.getElementById('search').addEventListener('submit', function (e) {
+        e.preventDefault();
+        search();
+    });
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    async function postJson(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': csrfToken    // csurf 默认会读取这个 header
+            },
+            body: JSON.stringify(body)
+        });
+        return res;
+    }
+
     // 統一的渲染函數
     const renderCars = (cars, append = false) => {
         const container = document.getElementById("searchResult");
         if (!cars || cars.length === 0) {
             if (!append) {
-                container.innerHTML = '<div class="no-results">沒有找到符合條件的車輛</div>';
+                container.innerHTML = '<div class="no-results">No vehicles found matching your criteria</div>';
             }
             return;
         }
@@ -151,30 +182,29 @@
         let cardsHtml = '';
         cars.forEach(car => {
             cardsHtml += `
-            <a href="/booking?carID=${car.carID}" class="car-card-link">
-                <div class="car-card">
+                <div class="car-card" onclick="location.href='/booking?carID=${car.carID}'">
                     <img src="${car.imageURL || '/images/default-car.jpg'}"
                          class="car-image"
                          onerror="this.src='/images/default-car.jpg'">
                     <div class="car-info">
                         <div class="car-title">${car.brand} ${car.model}</div>
-                        <div class="car-year">${car.year}年</div>
+                        <div class="car-year">${car.year} Year</div>
                         <div class="car-details">
-                            <div class="car-detail"><strong>車型:</strong> ${car.type || ''}</div>
-                            <div class="car-detail"><strong>座位:</strong> ${car.seats || ''}人</div>
-                            <div class="car-detail"><strong>傳動:</strong> ${car.transmission || ''}</div>
-                            <div class="car-detail"><strong>動力:</strong> ${car.powerSource || ''}</div>
+                            <div class="car-detail"><strong>Type:</strong> ${car.type || ''}</div>
+                            <div class="car-detail"><strong>Seats:</strong> ${car.seats || ''} passengers</div>
+                            <div class="car-detail"><strong>Transmission:</strong> ${car.transmission || ''}</div>
+                            <div class="car-detail"><strong>Power Source:</strong> ${car.powerSource || ''}</div>
                         </div>
-                        <div class="car-price">$${car.dailyRate || 0}/日</div>
+                        <div class="car-price">$${(car.dailyRate || 0).toLocaleString()}/day</div>
                     </div>
                     <% if (currentRole == 'admin') { %>
                     <div class="admin-buttons">
-                <button onclick="editCar('${car.carID}')">編輯</button>
-                <button onclick="deleteCar('${car.carID}')">刪除</button>
+                <button type="button" class="edit-btn" onclick="event.stopPropagation();editCar('${car.carID}')">Edit</button>
+                <button type="button" class="delete-btn" onclick="event.stopPropagation();deleteCar('${car.carID}')">Delete</button>
                 </div>
                 <% } %>
                 </div>
-            </a>`;
+            `;
         });
         if (append) {
             container.innerHTML += cardsHtml;
@@ -194,7 +224,7 @@
             console.log('Brands loaded:', brands);
 
             // 清空並填充品牌選項
-            brandSelect.innerHTML = '<option value="">請選擇品牌</option>';
+            brandSelect.innerHTML = '<option value="">Select Brand</option>';
             brands.forEach(brand => {
                 const option = document.createElement('option');
                 option.value = brand;
@@ -210,7 +240,7 @@
 
         } catch (error) {
             console.error('載入品牌失敗:', error);
-            brandSelect.innerHTML = '<option value="">載入品牌失敗</option>';
+            brandSelect.innerHTML = '<option value="">Failed to load brands</option>';
         }
     };
 
@@ -219,11 +249,11 @@
         const modelSelect = document.getElementById('model');
 
         if (!selectedBrand) {
-            modelSelect.innerHTML = '<option value="">請先選擇品牌</option>';
+            modelSelect.innerHTML = '<option value="">Please select a brand first</option>';
             return;
         }
 
-        modelSelect.innerHTML = '<option value="">載入中...</option>';
+        modelSelect.innerHTML = '<option value="">Loading...</option>';
 
         try {
             let models;
@@ -243,7 +273,7 @@
             console.log('Models loaded for', selectedBrand, ':', models);
 
             // 填充型號選項
-            modelSelect.innerHTML = '<option value="">請選擇型號</option>';
+            modelSelect.innerHTML = '<option value="">Select Model</option>';
             models.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model;
@@ -258,44 +288,39 @@
 
         } catch (error) {
             console.error('載入型號失敗:', error);
-            modelSelect.innerHTML = '<option value="">載入型號失敗</option>';
+            modelSelect.innerHTML = '<option value="">Failed to load models</option>';
         }
     };
 
     // 搜尋函數
     const search = async () => {
         const form = document.getElementById("search");
-        const formData = new URLSearchParams();
-
-        Array.from(form.elements).filter(input => input.type != 'button').forEach(input => {
-            if (input.value != "") formData.append(input.name, input.value);
+        // Step 1: 建立一個純物件形式的body
+        const body = {};
+        Array.from(form.elements).filter(input => input.type != 'button' && input.name).forEach(input => {
+            body[input.name] = input.value;
         });
 
-        currentSearchParams = new URLSearchParams(formData);
-        skip = 0;
-        finished = false;
+        body.skip = 0;
+        body.limit = BATCH_SIZE;
 
         try {
-            formData.append('skip', '0');
-            formData.append('limit', BATCH_SIZE.toString());
-
             const response = await fetch("/cars/search", {
                 method: "POST",
-                body: formData
+                headers: {
+                    "Content-Type": "application/json",
+                    "CSRF-Token": csrfToken
+                },
+                body: JSON.stringify(body)
             });
-
             if (!response.ok) throw new Error(`Response status: ${response.status}`);
             const cars = await response.json();
-            console.log(cars);
-
             renderCars(cars, false);
             skip = cars.length;
-            if (cars.length < BATCH_SIZE) finished = true;
-
+            finished = cars.length < BATCH_SIZE;
         } catch (error) {
-            console.log(error.message);
             document.getElementById("searchResult").innerHTML =
-                '<div class="no-results">搜索時發生錯誤，請稍後再試</div>';
+                '<div class="no-results">Error occurred while searching, please try again later</div>';
         }
     };
 
@@ -334,11 +359,11 @@
             dateFormat: "Y-m-d",
             disableMobile: true,
             locale: {
-                rangeSeparator: " 至 ",
+                rangeSeparator: " to ",
                 firstDayOfWeek: 1,
                 weekdays: {
-                    shorthand: ["日", "一", "二", "三", "四", "五", "六"],
-                    longhand: ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
+                    shorthand: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+                    longhand: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
                 }
             },
             onChange: function (selectedDates, dateStr, instance) {
@@ -352,6 +377,7 @@
 
     // 頁面初始化
     document.addEventListener('DOMContentLoaded', async () => {
+        modelCache.clear();
         // 1. 載入品牌選項
         await loadBrands();
 
@@ -376,22 +402,20 @@
     });
 
     function editCar(carID) {
-        window.location.href = `/add-car.html?carID=${carID}`;
+        window.location.href = `/cars/edit/${carID}`;
     }
 
     async function deleteCar(carID) {
-        if (!confirm('確定要刪除這輛車嗎？')) return;
+        if (!confirm('Are you sure you want to delete this car?')) return;
 
         try {
-            const res = await fetch(`/cars/delete/${carID}`, {
-                method: 'DELETE'
-            });
-            if (!res.ok) throw new Error('刪除失敗');
-            alert('刪除成功');
-            search(); // 重新載入車輛列表
+            const res = await postJson('/cars/delete', { carID });
+            if (!res.ok) throw new Error('Delete failed');
+            alert('Delete successful');
+            search();
         } catch (err) {
-            alert('刪除失敗，請稍後再試');
-            console.error(err);
+            alert('Delete failed, please try again later');
+            console.error('刪除錯誤:', err);
         }
     }
 

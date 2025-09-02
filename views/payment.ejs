@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title>Payment Information</title>
     <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -48,7 +49,7 @@
                             <div class="form-group">
                                 <label class="form-label" for="cardnumber">Card No.</label>
                                 <input type="text" name="cardNum" id="card-number" maxlength="19" class="form-input"
-                                    placeholder="1234 5678 9012 3456"  required>
+                                    placeholder="1234 5678 9012 3456" required>
                             </div>
 
                             <div class="form-row">
@@ -72,13 +73,14 @@
                         <input type="hidden" name="startDate" value="<%=locals.startDate%>">
                         <input type="hidden" name="endDate" value="<%=locals.endDate%>">
                         <input type="hidden" name="amount" value="<%=locals.amount%>">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                         <!-- 支付宝选项 -->
                         <div id="alipay-option" class="method-option">
                             <div class="method-inner">
                                 <div class="method-info">
                                     <i class="fa fa-qrcode method-icon icon-alipay"></i>
-                                    <span class="method-text">AlipayHK</span>
+                                    <span class="method-text">AlipayHK </span>
                                 </div>
                                 <i class="fa fa-chevron-down method-arrow"></i>
                             </div>
@@ -88,8 +90,8 @@
                         <div id="alipay-form" class="payment-form">
                             <div class="alipay-content">
                                 <div class="qrcode-container">
-                                    <img src="https://picsum.photos/300/300?random=1" alt="AliayHK"
-                                        class="qrcode-image">
+                                    <img src="/images/AlipayQRcode.png" alt="AliayHK" class="qrcode-image unscannable">
+                                    <div class="overlay-text">Service Temporarily Suspended</div>
                                 </div>
                                 <p class="qrcode-text">Please scan QR Code for payment</p>
                                 <a href="#" class="alipay-link">
@@ -97,21 +99,22 @@
                                 </a>
                             </div>
                         </div>
+
                     </div>
 
                     <!-- 订单摘要 -->
                     <div class="order-summary">
                         <div class="order-item">
                             <span class="order-label">Rental Charge: </span>
-                            <span>$<%=locals.amount%>.00</span>
+                            <span id="rental-amount">$<%= locals.amount %>.00</span>
                         </div>
                         <div class="order-item">
-                            <span class="order-label">Insurance: </span>
-                            <span id="Insurance">$38.00</span>
+                            <span class="order-label">Handling Charge(3%): </span>
+                            <span id="handling-charge">$0.00</span>
                         </div>
                         <div class="order-total">
                             <span>Total: </span>
-                            <span class="total-amount" id="total-amount"></span>
+                            <span class="total-amount" id="total-amount">$0.00</span>
                         </div>
                     </div>
 
@@ -124,30 +127,25 @@
         </div>
 
         <script>
-            //     const CurrTime = new Date();
-            //   const setHidden = function() {
-            //       document.getElementsByName("xxx")[0].value = new Date();
-            //   }
-            const total = 38 + <%=locals.amount %>;
-            document.getElementById('total-amount').textContent = `$${total}.00`;
-            document.getElementById('pay-button').textContent = `Confirmed: $${total}.00`;
+            // 填充 handling charge 和总计
+            document.addEventListener('DOMContentLoaded', () => {
+                // 1. 获取租车费用
+                const rentalElem = document.getElementById('rental-amount');
+                const rentalText = rentalElem.textContent.replace(/[^0-9.]/g, '');
+                const rentalValue = parseFloat(rentalText) || 0;
+
+                // 2. 计算 handling charge（3%）
+                const handlingValue = rentalValue * 0.03;
+                const handlingElem = document.getElementById('handling-charge');
+                handlingElem.textContent = `$${handlingValue.toFixed(2)}`;
+
+                // 3. 计算总计（rental + handling）
+                const totalValue = rentalValue + handlingValue;
+                const totalElem = document.getElementById('total-amount');
+                totalElem.textContent = `$${totalValue.toFixed(2)}`;
+                document.getElementById('pay-button').textContent = `Confirmed: $${totalValue}.00`;
+            });
             const input = document.getElementById('expiry');
-            
-            /*input.addEventListener('input', () => {
-                let val = input.value;
-                val = val.replace(/[^0-9]/g, '');           // 只留數字
-                if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2, 4); // 自動加斜線
-                else if (val.length > 0 && val.length <= 2) val = val;
-                // 檢查月份範圍
-                if (val.length >= 2) {
-                    let month = val.slice(0, 2);
-                    if (parseInt(month) < 1 || parseInt(month) > 12) {
-                        val = '';
-                    }
-                }
-                if (val.length > 5) val = val.slice(0, 5);
-                input.value = val;
-            });*/
 
             // 获取DOM元素
             const creditOption = document.getElementById('credit-option');

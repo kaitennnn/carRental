@@ -3,52 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <title>Registration Successful</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f8;
-      text-align: center;
-      padding: 50px;
-    }
-    .container {
-      background-color: #fff;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 500px;
-      margin: auto;
-    }
-    h1 {
-      color: #4CAF50;
-    }
-    a {
-      color: #007BFF;
-      text-decoration: none;
-    }
-    .login-button {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 24px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      text-decoration: none;
-      font-size: 16px;
-      transition: background-color 0.3s ease;
-    }
-    .login-button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+  <!-- 引入全局样式 -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Registration Successful</h1>
-    <p>Your account has officially been created and is now ready to go!</p>
-    
-    <!-- Back to Login Button -->
-    <a href="/users/login" class="login-button">Back to Login</a>
-  </div>
+  <main class="auth-container">
+    <div class="card auth-form" style="max-width: 500px; margin: auto; text-align: center;">
+      <!-- 成功状态标题 -->
+      <h1 class="status--success" style="margin-bottom: var(--space-16);">
+        Registration Successful
+      </h1>
+      <!-- 文本内容 -->
+      <p style="margin-bottom: var(--space-16);">
+        Your account has officially been created and is now ready to go!
+      </p>
+      <p style="margin-bottom: var(--space-24);">
+        You will be redirected in 5 seconds; if not, please click the button below.<br>
+        Click the button below to login:
+      </p>
+      <!-- 登录按钮，使用全局按钮样式 -->
+      <a href="/users/login" id="loginBtn" class="btn btn--primary auth-button" style="width: auto;">
+        Back to Login
+      </a>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer>
+    <p>&copy; 2025 CarRental. All rights reserved.</p>
+  </footer>
+
+  <!-- 脚本 -->
+  <script>
+    // 获取 returnUrl 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('returnUrl') || '/';
+
+    // 设置登录按钮链接
+    const loginBtn = document.getElementById('loginBtn');
+    loginBtn.href = `/users/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+
+    // 5秒后自动跳转
+    setTimeout(() => {
+      window.location.href = `/users/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+    }, 5000);
+  </script>
 </body>
 </html>

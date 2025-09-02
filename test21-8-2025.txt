@@ -1,4 +1,0 @@
-Should we use NodeJS emailer for our project? 
-yes:)
-:)
-

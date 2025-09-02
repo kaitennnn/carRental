@@ -23,7 +23,7 @@ cloudinary.config({
 });
 
 router.get('/', (req, res) => {
-  const isAdmin = req.session?.role === 'admin'; // 從 session 判斷身份
+  const isAdmin = req.session.role === 'admin';
   const {
     brand = '',
     model = '',
@@ -34,6 +34,7 @@ router.get('/', (req, res) => {
   } = req.query;
 
   res.render('cars', {
+    csrfToken: req.csrfToken(),
     title: 'CarsList',
     isAdmin,
     brand,
@@ -101,7 +102,6 @@ router.post('/add', upload.single('vehicleImage'), async function (req, res, nex
       transmission,
       powerSource,
       lastUpDate: new Date(lastUpDate),
-      available: true,
       createdAt: new Date()
     };
 
@@ -115,26 +115,25 @@ router.post('/add', upload.single('vehicleImage'), async function (req, res, nex
   }
 });
 
-router.get('/edit1/:carID', async (req, res) => {
+router.get('/edit/:carID', async (req, res) => {
   const client = new MongoClient(uri);
   try {
     await client.connect();
-    const car = await client.db("carRental").collection("cars").findOne({ carID: req.params.carID });
+    const carID = req.params.carID;
+    const car = carID == "0"
+      ? {}
+      : await client.db("carRental").collection("cars").findOne({ carID });
 
-    if (!car) {
-      return res.status(404).json({ error: '找不到車輛' });
-    }
-
-    res.json(car); // 回傳 JSON 給前端
+    res.render("addCar", { car, csrfToken: req.csrfToken() });
   } catch (err) {
-    console.error('取得車輛資料失敗:', err);
-    res.status(500).json({ error: '伺服器錯誤' });
+    console.error("取得車輛資料失敗:", err);
+    res.status(500).send("伺服器錯誤");
   } finally {
     await client.close();
   }
 });
 
-router.post('/update/:carID', async (req, res) => {
+router.post('/update', upload.single('vehicleImage'), async (req, res) => {
   if (req.session?.role !== 'admin') {
     return res.status(403).send('無權限更新車輛');
   }
@@ -142,32 +141,110 @@ router.post('/update/:carID', async (req, res) => {
   const client = new MongoClient(uri);
   try {
     await client.connect();
+    const db = client.db("carRental");
+    const carsCollection = db.collection("cars");
+    const systemNumCollection = db.collection("systemNum");
 
-    const updateFields = {
+    const carID = req.body.carID;
+    const imageUrl = req.file?.path || req.body.existingImageURL || '';
+
+    const newCarData = {
+      carID,
       brand: req.body.brand,
       model: req.body.model,
       year: Number(req.body.year),
       type: req.body.type,
       dailyRate: Number(req.body.dailyRate),
+      description: req.body.description,
+      imageURL: imageUrl,
       seats: Number(req.body.seats),
       transmission: req.body.transmission,
       powerSource: req.body.powerSource,
-      description: req.body.description,
-      lastUpDate: new Date(req.body.lastUpDate)
+      lastUpDate: new Date(req.body.lastUpDate),
+      createdAt: new Date()
     };
 
-    const result = await client.db("carRental").collection("cars").updateOne(
-      { carID: req.params.carID },
-      { $set: updateFields }
-    );
+    if (carID == "0") {
+      const brandUpper = req.body.brand.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const modelUpper = req.body.model.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      let number = 1;
+      let newCarID = `${brandUpper}${modelUpper}${String(number).padStart(3, '0')}`;
 
-    if (result.modifiedCount === 0) {
-      return res.status(404).send('更新失敗或資料未變更');
+      const systemDoc = await systemNumCollection.findOne({ name: "carIDList" });
+      const usedIDs = systemDoc?.carIDs || [];
+
+      while (usedIDs.includes(newCarID)) {
+        number++;
+        newCarID = `${brandUpper}${modelUpper}${String(number).padStart(3, '0')}`;
+      }
+
+      await systemNumCollection.updateOne(
+        { name: "carIDList" },
+        { $push: { carIDs: newCarID } },
+        { upsert: true }
+      );
+
+      newCarData.carID = newCarID;
+      newCarData.createdAt = new Date();
+
+      await carsCollection.insertOne(newCarData);
+    } else {
+      const existingCar = await carsCollection.findOne({ carID });
+      if (!existingCar) {
+        console.error("找不到指定車輛，無法更新：", carID);
+        return res.status(404).send("找不到指定車輛");
+      }
+
+      const updatedCar = {
+        carID,
+        brand: req.body.brand,
+        model: req.body.model,
+        year: Number(req.body.year),
+        type: req.body.type,
+        dailyRate: Number(req.body.dailyRate),
+        description: req.body.description,
+        imageURL: imageUrl,
+        seats: Number(req.body.seats),
+        transmission: req.body.transmission,
+        powerSource: req.body.powerSource,
+        lastUpDate: new Date(req.body.lastUpDate),
+        createdAt: existingCar.createdAt
+      };
+
+      await carsCollection.replaceOne({ carID }, updatedCar);
     }
 
-    res.redirect('/cars');
+    res.redirect("/cars");
   } catch (err) {
-    console.error('更新錯誤:', err);
+    console.error("更新錯誤:", err);
+    res.status(500).send("伺服器錯誤");
+  } finally {
+    await client.close();
+  }
+});
+
+router.post('/delete', async (req, res) => {
+  if (req.session?.role !== 'admin') {
+    return res.status(403).send('無權限刪除車輛');
+  }
+
+  const carID = req.body.carID;
+  if (!carID) {
+    return res.status(400).send('缺少 carID');
+  }
+
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    const result = await client.db("carRental").collection("cars").deleteOne({ carID });
+
+    if (result.deletedCount === 1) {
+      res.status(200).send('刪除成功');
+    } else {
+      res.status(404).send('找不到指定車輛');
+    }
+  } catch (err) {
+    console.error('刪除錯誤:', err);
     res.status(500).send('伺服器錯誤');
   } finally {
     await client.close();

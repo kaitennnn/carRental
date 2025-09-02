@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title>Login - CarRental</title>
     <link rel="stylesheet" href="../stylesheets/style.css">
 </head>
+
 <body>
     <nav class="navbar">
-        <a href="/" class="logo">CarRental</a>
+        <a href="/" class="logo">carRental</a>
         <ul class="nav-links">
             <li><a href="/">Home</a></li>
             <li><a href="/cars">CarList</a></li>
-            <li class="user-menu">
-                <a href="#" class="user-icon">
-                    <i class="fas fa-user"></i>
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a href="/users/login">Login</a></li>
-                    
-                </ul>
-            </li>
         </ul>
     </nav>
 
@@ -36,37 +30,54 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" required>
                 </div>
+                <input type="hidden" name="returnUrl" value="<%= locals.returnUrl %>">
                 <button type="Submit" class="auth-button">Login</button>
-                <p class="auth-link">Not a Member？ <a href="../register.html">Register Here</a></p>
+                <p class="auth-link">Not a Member？ <a id="registerBtn" href="/users/register">Register Here</a>
+                </p>
                 <p id="loginError" class="error-massage" style="color:red; display:none;"></p>
             </form>
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2024 CarRental. All rights reserved.</p>
+        <p>&copy; 2025 CarRental. All rights reserved.</p>
     </footer>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnUrl = urlParams.get('returnUrl') || '/';
+        const registerBtn = document.getElementById('registerBtn');
+        registerBtn.href = `/users/register?returnUrl=${encodeURIComponent(returnUrl)}`;
+        async function postJson(url, body) {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'CSRF-Token': csrfToken    // csurf 默认会读取这个 header
+                },
+                body: JSON.stringify(body)
+            });
+            return res;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
             event.preventDefault();
             const errorEl = document.getElementById('loginError');
             errorEl.style.display = 'none';
             const form = event.target;
             const data = {
                 userName: form.userName.value.trim(),
-                password: form.password.value
+                password: form.password.value,
+                returnUrl: form.returnUrl.value
             };
             try {
-                const res = await fetch('/users/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                const res = await postJson('/users/login', data);
                 const result = await res.json();
+                console.log(result);
                 if (res.ok && result.success) {
                     // 登入成功，跳轉到會員中心或首頁
-                    window.location.href = '/';
+                    window.location.href = result.redirectUrl || '/';
                 } else {
                     // 顯示錯誤訊息
                     errorEl.textContent = result.message || '登入失敗，請檢查帳號密碼';
@@ -79,4 +90,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
+    <title>
+        <%= car.carID ? 'Edit Car' : 'Add Car' %> - CarRental
+    </title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">carRental</div>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/cars">Car List</a></li>
+            <li><a href="/cars/edit/0">Add Car</a></li>
+            <li class="user-menu">
+                <a href="#" class="user-icon"><i class="fas fa-user"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="/users/login">Login</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="admin-container">
+        <h1>
+            <%= car.carID ? 'Edit Car' : 'Add Car' %>
+        </h1>
+        <form class="admin-form" id="add-car-form" enctype="multipart/form-data" action="/cars/update" method="POST">
+            <input type="hidden" name="carID" value="<%= car.carID || '0' %>">
+
+            <div class="form-group">
+                <label for="car-brand">Brand</label>
+                <input type="text" id="car-brand" name="brand" placeholder="Enter brand name here"
+                    value="<%= car.brand || '' %>" <%=car.carID ? 'readonly' : '' %> required>
+                <% if (car.carID) { %>
+                    <small class="readonly-note">The brand is not editable</small>
+                    <% } %>
+            </div>
+
+            <div class="form-group">
+                <label for="car-model">Model</label>
+                <input type="text" id="car-model" name="model" placeholder="Enter model name here"
+                    value="<%= car.model || '' %>" <%=car.carID ? 'readonly' : '' %> required>
+                <% if (car.carID) { %>
+                    <small class="readonly-note">The model is not editable</small>
+                    <% } %>
+            </div>
+
+            <div class="form-group">
+                <label for="car-year">Year</label>
+                <input type="number" id="car-year" name="year" min="2000" max="2025" placeholder="Enter 2000-2025"
+                    value="<%= car.year || '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="car-type">Type</label>
+                <select id="car-type" name="type" required>
+                    <option value="">Choose a car type</option>
+                    <option value="sedan" <%=car.type==='sedan' ? 'selected' : '' %>>sedan</option>
+                    <option value="luxury" <%=car.type==='luxury' ? 'selected' : '' %>>luxury</option>
+                    <option value="suv" <%=car.type==='suv' ? 'selected' : '' %>>SUV</option>
+                    <option value="mpv" <%=car.type==='mpv' ? 'selected' : '' %>>mpv</option>
+                    <option value="wagon" <%=car.type==='wagon' ? 'selected' : '' %>>wagon</option>
+                    <option value="coupe" <%=car.type==='coupe' ? 'selected' : '' %>>coupe</option>
+                    <option value="convertible" <%=car.type==='convertible' ? 'selected' : '' %>>convertible</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="daily-rate">Daily Rate</label>
+                <input type="number" id="daily-rate" name="dailyRate" min="1" value="<%= car.dailyRate || '' %>"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="car-seats">Seats</label>
+                <input type="number" id="car-seats" name="seats" min="2" max="7" placeholder="Enter 2-7"
+                    value="<%= car.seats || '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="car-transmission">Transmission</label>
+                <select id="car-transmission" name="transmission" required>
+                    <option value="">Choose a transmission</option>
+                    <option value="automatic" <%=car.transmission=='automatic' ? 'selected' : '' %>>automatic</option>
+                    <option value="manual" <%=car.transmission=='manual' ? 'selected' : '' %>>manual</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="car-power">Power Source</label>
+                <select id="car-power" name="powerSource" required>
+                    <option value="">Choose a Power Source</option>
+                    <option value="gasoline" <%=car.powerSource=='gasoline' ? 'selected' : '' %>>gasoline</option>
+                    <option value="diesel" <%=car.powerSource=='diesel' ? 'selected' : '' %>>diesel</option>
+                    <option value="electric" <%=car.powerSource=='electric' ? 'selected' : '' %>>electric</option>
+                    <option value="hybrid" <%=car.powerSource=='hybrid' ? 'selected' : '' %>>hybrid</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="car-image">Car Image</label>
+                <input type="file" id="car-image" name="vehicleImage" accept="image/*" <%=car.carID ? '' : 'required'
+                    %>>
+                <input type="hidden" name="existingImageURL" value="<%= car.imageURL %>">
+                <% if (car.carID) { %>
+                    <small class="readonly-note">Skip this if you're not updating the image</small>
+                    <% } %>
+            </div>
+
+            <div class="form-group">
+                <label for="car-description">Description</label>
+                <textarea id="car-description" name="description" rows="4"><%= car.description || '' %></textarea>
+            </div>
+
+            <div class="form-group">
+                <input type="hidden" id="last-update" name="lastUpDate"
+                    value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="submit-button">
+                <%= car.carID ? 'Save changes' : 'Add this car' %>
+            </button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 CarRental. All rights reserved.</p>
+    </footer>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</body>
+
+</html>
