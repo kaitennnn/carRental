@@ -393,4 +393,65 @@ router.get('/api/brands', async (req, res) => {
   }
 });
 
+router.get('/statistics', async (req, res, next) => {
+  if (req.session.role !== 'admin') return res.status(403).send('Admin only');
+  const client = new MongoClient(uri);
+  const db = client.db('carRental');
+  const bookings = db.collection('booking');
+  const cars = db.collection('cars');
+  try {
+    // 1. 品牌选择次数：先 lookup 到 cars 获取 brand，再 group
+    const brandAgg = [
+      {
+        $lookup: {
+          from: 'cars',
+          localField: 'carID',
+          foreignField: 'carID',
+          as: 'carInfo'
+        }
+      },
+      { $unwind: '$carInfo' },
+      {
+        $group: {
+          _id: '$carInfo.brand',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ];
+    const brandsData = await bookings.aggregate(brandAgg).toArray();
+
+    // 2. 金额区间分布：将 amount 转 Number，再 bucket
+    const amountAgg = [
+      {
+        $addFields: {
+          amountNum: { $toDouble: '$amount' }
+        }
+      },
+      {
+        $bucket: {
+          groupBy: '$amountNum',
+          boundaries: [0, 600, 800, 1200, Infinity],
+          default: '其他',
+          output: { count: { $sum: 1 } }
+        }
+      }
+    ];
+    const amountsData = await bookings.aggregate(amountAgg).toArray();
+    console.log(brandsData,amountsData);
+
+    // 3. 渲染页面
+
+    res.render('statistics', {
+      brands: brandsData.map(b => ({ brand: b._id, count: b.count })),
+      amounts: amountsData.map(a => ({ range: String(a._id), count: a.count }))
+    });
+  } catch (err) {
+    next(err);
+  } finally {
+    await client.close();
+  }
+});
+
+
 export default router;

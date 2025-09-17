@@ -6,7 +6,7 @@ const uri = "mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?
 const router = Router();
 
 function ensureAuthenticated(req, res, next) {
-  // 假设您在登录时把用户ID存入了 session.userId
+  // 假設您在登录时把用户ID存入了 session.userId
   if (req.session && req.session.userId) {
     // 用户已登录，继续后续处理
     return next();
@@ -21,6 +21,7 @@ function ensureAuthenticated(req, res, next) {
   const returnUrl = encodeURIComponent(req.originalUrl);
   res.redirect(`/users/login?returnUrl=${returnUrl}`);
 };
+
 /* GET users listing. */
 router.get('/profile/:username', ensureAuthenticated, async function (req, res, next) {
   const client = new MongoClient(uri);

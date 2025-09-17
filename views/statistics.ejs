@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Statistics – CarRental</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body class="bg-background text-text">
+
+  <nav class="navbar">
+    <a href="/" class="logo">CarRental</a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/cars">Car List</a></li>
+      <% if (currentUser && currentRole === 'admin') { %>
+        <li><a href="/admin/stats">Statistics</a></li>
+      <% } %>
+      <% if (currentUser) { %>
+        <li><a href="/users/logout">Logout</a></li>
+      <% } else { %>
+        <li><a href="/users/login">Login</a></li>
+      <% } %>
+    </ul>
+  </nav>
+
+  <div class="container stats-container py-16">
+    <header class="page-header text-center mb-16">
+      <h1 class="page-title animate-fade-in-up">Admin Statistics Center</h1>
+      <p class="page-subtitle text-text-secondary animate-fade-in-up">Vehicle Brand Selections & Order Amount Distribution</p>
+    </header>
+
+    <div class="stats-grid">
+      <!-- Brand Chart Card -->
+      <div class="card stats-card animate-fade-in-up">
+        <div class="card__header flex items-center gap-4 mb-4">
+          <div class="card-icon">📊</div>
+          <h2 class="card-title">Brand Selection Counts</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="brandChart" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Amount Chart Card -->
+      <div class="card stats-card animate-fade-in-up">
+        <div class="card__header flex items-center gap-4 mb-4">
+          <div class="card-icon">💰</div>
+          <h2 class="card-title">Order Amount Distribution</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="amountChart" class="chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="py-8 text-center text-text-secondary">
+    &copy; 2025 CarRental. All rights reserved.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Show loaders
+      const brandEl = document.getElementById('brandChart').parentElement;
+      const amtEl   = document.getElementById('amountChart').parentElement;
+      brandEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      amtEl.innerHTML   = '<div class="loading"><div class="spinner"></div></div>';
+
+      await new Promise(r => setTimeout(r, 300));
+
+      // Restore canvases
+      brandEl.innerHTML = '<canvas id="brandChart" class="chart-canvas"></canvas>';
+      amtEl.innerHTML   = '<canvas id="amountChart" class="chart-canvas"></canvas>';
+
+      // Data from server
+      const brandLabels  = <%-JSON.stringify(brands.map(b => b.brand)) %>;
+      const brandData    = <%-JSON.stringify(brands.map(b => b.count)) %>;
+      const amountLabels = <%-JSON.stringify(amounts.map(a => a.range)) %>;
+      const amountData   = <%-JSON.stringify(amounts.map(a => a.count)) %>;
+
+      // Brand bar chart
+      new Chart(document.getElementById('brandChart'), {
+        type: 'bar',
+        data: {
+          labels: brandLabels,
+          datasets: [{
+            label: 'Selections',
+            data: brandData,
+            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth:   2,
+            borderRadius:  8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(var(--color-border),0.2)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      // Order amount doughnut chart
+      new Chart(document.getElementById('amountChart'), {
+        type: 'doughnut',
+        data: {
+          labels: amountLabels,
+          datasets: [{
+            data: amountData,
+            backgroundColor: [
+              'rgba(255,99,132,0.8)',
+              'rgba(54,162,235,0.8)',
+              'rgba(255,206,86,0.8)',
+              'rgba(75,192,192,0.8)'
+            ],
+            borderColor: [
+              'rgba(255,99,132,1)',
+              'rgba(54,162,235,1)',
+              'rgba(255,206,86,1)',
+              'rgba(75,192,192,1)'
+            ],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { padding: 16, usePointStyle: true }
+            }
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
