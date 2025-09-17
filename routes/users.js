@@ -24,7 +24,7 @@ function ensureAuthenticated(req, res, next) {
 /* GET users listing. */
 router.get('/profile/:username', ensureAuthenticated, async function (req, res, next) {
   const client = new MongoClient(uri);
-  if (req.params.username !== req.session.userName) {
+  if (req.params.username != req.session.userName) {
     return res.status(403).send('Forbidden');
   }
   const user = await client.db('carRental').collection('users')
