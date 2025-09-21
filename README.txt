@@ -10,7 +10,3 @@
 5. Login ID(User)
 	Name : George
 	Password : 11111111 
-
-Remarks:
-1. Database Path : mongodb+srv://backendtest25:123321@car-rental.5ighfti.mongodb.net/?retryWrites=true&w=majority&appName=car-rental
-
